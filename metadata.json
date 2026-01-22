@@ -1,0 +1,8 @@
+
+{
+  "name": "SkyMarshal Admin Dashboard",
+  "description": "An intelligent aerial traffic observation system dashboard for drone fleet management, real-time computer vision processing, and violation detection.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
