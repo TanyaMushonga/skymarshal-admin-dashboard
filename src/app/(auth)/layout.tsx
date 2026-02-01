@@ -49,8 +49,9 @@ export default function AuthLayout({
           {/* Footer Info */}
           <div className="mt-12 pt-8 border-t border-border">
             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-loose">
-              Restricted Access. All sessions are encrypted and logged under
-              Federal Cyber Security Protocol 882-B.
+              Restricted Access. All sessions are monitored and recorded in
+              accordance with the Cyber and Data Protection Act [Chapter 12:07]
+              of Zimbabwe.
             </p>
           </div>
         </div>
