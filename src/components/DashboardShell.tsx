@@ -14,11 +14,11 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
   const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="min-h-screen bg-slate-900 flex text-slate-200 overflow-x-hidden">
+    <div className="min-h-screen bg-background flex text-foreground overflow-x-hidden">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] lg:hidden"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-55 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
