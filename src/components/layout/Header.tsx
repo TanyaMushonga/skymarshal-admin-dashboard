@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Bell, Search, Settings, HelpCircle, Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -39,6 +40,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
+        <ThemeToggle />
         <button className="hidden sm:block p-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all">
           <HelpCircle size={20} />
         </button>
