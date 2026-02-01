@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginFormValues } from "@/lib/auth-schemas";
-import { api, ApiError } from "@/lib/api";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,28 +31,19 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // Authenticate with backend
-      await api.post("/auth/login/", data);
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
 
-      // On success, redirect to dashboard
-      router.push("/dashboard");
-    } catch (err) {
-      if (err instanceof ApiError) {
-        // Handle Django-style errors (detail or specific field errors)
-        if (err.data.non_field_errors) {
-          setError(
-            Array.isArray(err.data.non_field_errors)
-              ? err.data.non_field_errors[0]
-              : err.data.non_field_errors,
-          );
-        } else if (err.data.detail) {
-          setError(err.data.detail);
-        } else {
-          setError("Access denied. Please check your credentials.");
-        }
+      if (result?.error) {
+        setError("Invalid credentials. Access denied.");
       } else {
-        setError("Network error. Please try again later.");
+        router.push("/dashboard");
       }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
