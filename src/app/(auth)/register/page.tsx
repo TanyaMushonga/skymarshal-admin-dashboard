@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Lock,
-  Mail,
-  User,
-  ShieldCheck,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
+import { Mail, User, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -24,17 +17,25 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      fullName: "",
+      first_name: "",
+      last_name: "",
       email: "",
-      password: "",
-      confirmPassword: "",
+      force_number: "",
+      unit_id: "",
+      phone_number: "",
+      is_certified_pilot: false,
+      pilot_license_number: "",
+      is_2fa_enabled: true,
       terms: false,
     },
   });
+
+  const isCertifiedPilot = watch("is_certified_pilot");
 
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
@@ -89,35 +90,67 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-            Full Name
-          </label>
-          <div className="relative group">
-            <User
-              className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
-                errors.fullName
-                  ? "text-destructive"
-                  : "text-muted-foreground group-focus-within:text-primary"
-              }`}
-              size={18}
-            />
-            <input
-              {...register("fullName")}
-              type="text"
-              placeholder="Officer Name"
-              className={`w-full bg-muted/50 border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
-                errors.fullName
-                  ? "border-destructive focus:ring-destructive/20"
-                  : "border-border focus:ring-primary/20"
-              }`}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+              First Name
+            </label>
+            <div className="relative group">
+              <User
+                className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                  errors.first_name
+                    ? "text-destructive"
+                    : "text-muted-foreground group-focus-within:text-primary"
+                }`}
+                size={18}
+              />
+              <input
+                {...register("first_name")}
+                type="text"
+                placeholder="First Name"
+                className={`w-full bg-muted/50 border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
+                  errors.first_name
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border focus:ring-primary/20"
+                }`}
+              />
+            </div>
+            {errors.first_name && (
+              <span className="text-[10px] text-destructive font-bold ml-1">
+                {errors.first_name.message}
+              </span>
+            )}
           </div>
-          {errors.fullName && (
-            <span className="text-[10px] text-destructive font-bold ml-1">
-              {errors.fullName.message}
-            </span>
-          )}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+              Last Name
+            </label>
+            <div className="relative group">
+              <User
+                className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
+                  errors.last_name
+                    ? "text-destructive"
+                    : "text-muted-foreground group-focus-within:text-primary"
+                }`}
+                size={18}
+              />
+              <input
+                {...register("last_name")}
+                type="text"
+                placeholder="Last Name"
+                className={`w-full bg-muted/50 border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
+                  errors.last_name
+                    ? "border-destructive focus:ring-destructive/20"
+                    : "border-border focus:ring-primary/20"
+                }`}
+              />
+            </div>
+            {errors.last_name && (
+              <span className="text-[10px] text-destructive font-bold ml-1">
+                {errors.last_name.message}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -154,64 +187,129 @@ export default function RegisterPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-              Set Security Key
+              Force Number
             </label>
             <div className="relative group">
-              <Lock
+              <ShieldCheck
                 className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
-                  errors.password
+                  errors.force_number
                     ? "text-destructive"
                     : "text-muted-foreground group-focus-within:text-primary"
                 }`}
                 size={18}
               />
               <input
-                {...register("password")}
-                type="password"
-                placeholder="••••••••"
+                {...register("force_number")}
+                type="text"
+                placeholder="Force Number"
                 className={`w-full bg-muted/50 border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
-                  errors.password
+                  errors.force_number
                     ? "border-destructive focus:ring-destructive/20"
                     : "border-border focus:ring-primary/20"
                 }`}
               />
             </div>
-            {errors.password && (
+            {errors.force_number && (
               <span className="text-[10px] text-destructive font-bold ml-1">
-                {errors.password.message}
+                {errors.force_number.message}
               </span>
             )}
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
-              Confirm Key
+              Unit ID
             </label>
             <div className="relative group">
               <ShieldCheck
                 className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${
-                  errors.confirmPassword
+                  errors.unit_id
                     ? "text-destructive"
                     : "text-muted-foreground group-focus-within:text-primary"
                 }`}
                 size={18}
               />
               <input
-                {...register("confirmPassword")}
-                type="password"
-                placeholder="••••••••"
+                {...register("unit_id")}
+                type="text"
+                placeholder="Unit ID"
                 className={`w-full bg-muted/50 border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
-                  errors.confirmPassword
+                  errors.unit_id
                     ? "border-destructive focus:ring-destructive/20"
                     : "border-border focus:ring-primary/20"
                 }`}
               />
             </div>
-            {errors.confirmPassword && (
+            {errors.unit_id && (
               <span className="text-[10px] text-destructive font-bold ml-1">
-                {errors.confirmPassword.message}
+                {errors.unit_id.message}
               </span>
             )}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+            Phone Number
+          </label>
+          <div className="relative group">
+            <input
+              {...register("phone_number")}
+              type="tel"
+              placeholder="+1 (555) 000-0000"
+              className={`w-full bg-muted/50 border rounded-2xl py-4 pl-4 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
+                errors.phone_number
+                  ? "border-destructive focus:ring-destructive/20"
+                  : "border-border focus:ring-primary/20"
+              }`}
+            />
+          </div>
+          {errors.phone_number && (
+            <span className="text-[10px] text-destructive font-bold ml-1">
+              {errors.phone_number.message}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 py-2 cursor-pointer">
+            <input
+              {...register("is_certified_pilot")}
+              type="checkbox"
+              id="is_certified_pilot"
+              className="w-5 h-5 rounded-lg border bg-muted checked:bg-primary transition-all cursor-pointer accent-primary"
+            />
+            <label
+              htmlFor="is_certified_pilot"
+              className="text-sm font-medium cursor-pointer"
+            >
+              I am a Certified Pilot
+            </label>
+          </div>
+
+          {isCertifiedPilot && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest ml-1">
+                Pilot License Number
+              </label>
+              <div className="relative group">
+                <input
+                  {...register("pilot_license_number")}
+                  type="text"
+                  placeholder="License Number"
+                  className={`w-full bg-muted/50 border rounded-2xl py-4 pl-4 pr-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:border-primary/50 transition-all font-medium ${
+                    errors.pilot_license_number
+                      ? "border-destructive focus:ring-destructive/20"
+                      : "border-border focus:ring-primary/20"
+                  }`}
+                />
+              </div>
+              {errors.pilot_license_number && (
+                <span className="text-[10px] text-destructive font-bold ml-1">
+                  {errors.pilot_license_number.message}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-start gap-3 py-2 group cursor-pointer">
