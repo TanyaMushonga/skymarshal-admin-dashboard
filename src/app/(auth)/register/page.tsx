@@ -42,29 +42,12 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      // Register with backend
-      await api.post("/auth/register/", data);
+      await api.post("users/", data);
 
-      // On success, redirect to login (or dashboard depending on requirements)
       router.push("/login?registered=true");
     } catch (err) {
       if (err instanceof ApiError) {
-        // Handle Django-style errors
-        if (err.data.non_field_errors) {
-          setError(
-            Array.isArray(err.data.non_field_errors)
-              ? err.data.non_field_errors[0]
-              : err.data.non_field_errors,
-          );
-        } else if (err.data.detail) {
-          setError(err.data.detail);
-        } else if (typeof err.data === "object") {
-          // If there are specific field errors not caught by Zod (e.g., email already exists)
-          const firstError = Object.values(err.data)[0];
-          setError(Array.isArray(firstError) ? firstError[0] : firstError);
-        } else {
-          setError("Registration failed. Please try again.");
-        }
+        setError(err.message);
       } else {
         setError("Network error. Please try again later.");
       }
