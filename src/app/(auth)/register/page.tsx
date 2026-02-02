@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterFormValues } from "@/lib/auth-schemas";
+import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -44,7 +45,14 @@ export default function RegisterPage() {
     try {
       await api.post("users/", data);
 
-      router.push("/login?registered=true");
+      toast.success("Account initialized. Pending authorization...", {
+        description: "Redirecting to secure login...",
+      });
+
+      // Delay redirect to allow user to read feedback
+      setTimeout(() => {
+        router.push("/login?registered=true");
+      }, 2000);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
