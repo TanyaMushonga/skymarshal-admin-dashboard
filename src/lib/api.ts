@@ -5,10 +5,11 @@ import axios, {
 } from "axios";
 import { getSession } from "next-auth/react";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 export interface DjangoError {
+  detail?: string;
+  non_field_errors?: string[] | string;
+  message?: string;
   [key: string]: string[] | string | any;
 }
 
@@ -17,7 +18,26 @@ export class ApiError extends Error {
   data: DjangoError;
 
   constructor(status: number, data: DjangoError) {
-    super(data.detail || data.message || "An unexpected error occurred");
+    let message = "An unexpected error occurred";
+
+    if (data.detail) {
+      message = data.detail;
+    } else if (data.message) {
+      message = data.message;
+    } else if (data.non_field_errors) {
+      message = Array.isArray(data.non_field_errors)
+        ? data.non_field_errors[0]
+        : data.non_field_errors;
+    } else if (typeof data === "object" && data !== null) {
+      // If we have field-specific errors, grab the first one
+      const values = Object.values(data);
+      if (values.length > 0) {
+        const firstError = values[0];
+        message = Array.isArray(firstError) ? firstError[0] : firstError;
+      }
+    }
+
+    super(message);
     this.status = status;
     this.data = data;
   }
