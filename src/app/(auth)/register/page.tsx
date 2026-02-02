@@ -49,7 +49,6 @@ export default function RegisterPage() {
         description: "Redirecting to secure login...",
       });
 
-      // Delay redirect to allow user to read feedback
       setTimeout(() => {
         router.push("/login?registered=true");
       }, 2000);
