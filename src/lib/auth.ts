@@ -3,7 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 async function refreshAccessToken(token: any) {
   try {
@@ -38,10 +38,13 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
-          const response = await axios.post(`${API_BASE_URL}/auth/login/`, {
-            email: credentials.email,
-            password: credentials.password,
-          });
+          const response = await axios.post(
+            `${API_BASE_URL}/auth/login/admin/`,
+            {
+              email: credentials.email,
+              password: credentials.password,
+            },
+          );
 
           const user = response.data;
 
