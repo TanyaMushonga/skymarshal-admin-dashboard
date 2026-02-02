@@ -2,9 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 async function refreshAccessToken(token: any) {
   try {
     const response = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
