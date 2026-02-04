@@ -9,11 +9,13 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
-  role: UserRole;
+  role: string; // Changed from UserRole enum to string to match API "officer" vs "OFFICER"
   force_number?: string;
   unit_id?: string;
   is_officer: boolean;
   is_certified_pilot: boolean;
+  pilot_license_number?: string;
+  phone_number?: string;
   is_on_duty: boolean;
   last_known_lat?: number;
   last_known_lon?: number;
@@ -42,6 +44,7 @@ export interface Drone {
   model: string;
   serial_number: string;
   is_active: boolean;
+  assigned_officer?: number | null;
   assigned_officer_name?: string;
   status?: DroneStatus;
   latest_location?: DroneLocation;
@@ -130,4 +133,11 @@ export interface DashboardMetrics {
   total_violations_today: number;
   pending_violations: number;
   compliance_rate: number;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }
