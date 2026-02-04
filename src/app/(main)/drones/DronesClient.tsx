@@ -249,27 +249,79 @@ export default function DronesClient({
     setEditFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleActivate = async (drone: Drone) => {
+    try {
+      await api.post(`/drones/${drone.drone_id}/activate/`);
+      toast.success(`${drone.name} Activated`);
+      // Optimistic update
+      setDrones((prev) =>
+        prev.map((d) => (d.id === drone.id ? { ...d, is_active: true } : d)),
+      );
+      router.refresh();
+    } catch (error) {
+      console.error("Activation failed", error);
+      toast.error("Failed to activate drone");
+    }
+  };
+
+  const handleDeactivate = async (drone: Drone) => {
+    try {
+      await api.post(`/drones/${drone.drone_id}/deactivate/`);
+      toast.success(`${drone.name} Deactivated`);
+      // Optimistic update
+      setDrones((prev) =>
+        prev.map((d) => (d.id === drone.id ? { ...d, is_active: false } : d)),
+      );
+      router.refresh();
+    } catch (error) {
+      console.error("Deactivation failed", error);
+      toast.error("Failed to deactivate drone");
+    }
+  };
+
   const handleUpdateDrone = async () => {
-    if (!selectedDrone) return;
+    if (!selectedDrone || !selectedDrone.drone_id) return;
     setLoading(true);
     try {
-      const payload = {
-        ...editFormData,
-        assigned_officer: editFormData.assigned_officer
-          ? Number(editFormData.assigned_officer)
-          : null,
+      const oldOfficerId = selectedDrone.assigned_officer;
+      const newOfficerId = editFormData.assigned_officer
+        ? Number(editFormData.assigned_officer)
+        : null;
+
+      // Prepare payload for PATCH request
+      const patchPayload: Partial<Drone> = {
+        name: editFormData.name,
+        model: editFormData.model,
+        serial_number: editFormData.serial_number,
+        is_active: editFormData.is_active,
+        // Include assigned_officer in PATCH payload for general updates,
+        // especially if unassigning or if the dedicated assign endpoint isn't used.
+        assigned_officer: newOfficerId,
       };
+
+      // If assigned officer changed, use the dedicated assign/unassign endpoints if applicable
+      if (oldOfficerId !== newOfficerId) {
+        if (newOfficerId) {
+          // Assign new officer
+          await api.post(`/drones/${selectedDrone.drone_id}/assign/`, {
+            officer_id: newOfficerId,
+          });
+        } else if (oldOfficerId && newOfficerId === null) {
+          // Unassign officer
+          await api.post(`/drones/${selectedDrone.drone_id}/unassign/`);
+        }
+        // Remove assigned_officer from patchPayload if handled by dedicated endpoint
+        delete patchPayload.assigned_officer;
+      }
 
       const updatedDrone = await api.patch<Drone>(
         `/drones/${selectedDrone.drone_id}/`,
-        payload,
+        patchPayload,
       );
 
       // Update list
       setDrones((prev) =>
-        prev.map((d) =>
-          d.drone_id === updatedDrone.drone_id ? updatedDrone : d,
-        ),
+        prev.map((d) => (d.id === updatedDrone.id ? updatedDrone : d)),
       );
 
       // Update selected
@@ -278,7 +330,7 @@ export default function DronesClient({
       toast.success("Drone updated successfully");
       router.refresh();
     } catch (error) {
-      console.error("Update failed", error);
+      console.error("Failed to update drone:", error);
       toast.error("Failed to update drone");
     } finally {
       setLoading(false);
@@ -323,6 +375,22 @@ export default function DronesClient({
         return "bg-slate-500";
     }
   };
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      status__status: "",
+      model: "",
+      is_active: "",
+    });
+    router.push(pathname);
+  };
+
+  const hasActiveFilters =
+    filters.search ||
+    filters.status__status ||
+    filters.model ||
+    filters.is_active;
 
   return (
     <div className="space-y-6">
@@ -382,6 +450,15 @@ export default function DronesClient({
               placeholder="Search name, ID..."
               className="w-full sm:w-48 bg-background border border-border rounded-lg px-4 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20"
             />
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted rounded-lg transition-all border border-transparent hover:border-border whitespace-nowrap"
+              >
+                Clear
+              </button>
+            )}
 
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -538,20 +615,28 @@ export default function DronesClient({
         {selectedDrone && (
           <div className="space-y-6">
             {/* Header / ID */}
-            <div className="p-4 bg-muted/30 rounded-xl border border-border text-center">
-              <PlaneIcon size={48} className="mx-auto text-primary mb-2" />
-              <h3 className="text-lg font-bold text-foreground">
+            <div className="flex flex-col items-center gap-1 pt-2 pb-6 border-b border-border">
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 ${
+                  selectedDrone.is_active
+                    ? "bg-primary/10 text-primary"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <PlaneIcon size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-foreground">
                 {selectedDrone.name}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-medium text-muted-foreground">
                 {selectedDrone.drone_id}
               </p>
-              <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-background rounded-full border border-border">
-                <div
-                  className={`w-2 h-2 rounded-full ${getStatusColor(
+              <div className="flex items-center gap-2 mt-1">
+                <span
+                  className={`flex h-2 w-2 rounded-full ${getStatusColor(
                     selectedDrone.status?.status || "",
                   )}`}
-                ></div>
+                />
                 <span className="text-xs font-medium capitalize text-muted-foreground">
                   {selectedDrone.status?.status || "Unknown"}
                 </span>
@@ -629,31 +714,55 @@ export default function DronesClient({
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Model</p>
-                    <p className="text-sm font-semibold text-foreground">
-                      {selectedDrone.model}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Serial Num
-                    </p>
-                    <p
-                      className="text-sm font-semibold text-foreground truncate"
-                      title={selectedDrone.serial_number}
+                {/* Status Toggle Actions */}
+                <div className="flex gap-2">
+                  {selectedDrone.is_active ? (
+                    <button
+                      onClick={() => handleDeactivate(selectedDrone)}
+                      className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 py-2 rounded-lg text-sm font-semibold transition-colors"
                     >
-                      {selectedDrone.serial_number}
-                    </p>
+                      Deactivate Drone
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleActivate(selectedDrone)}
+                      className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/20 py-2 rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      Activate Drone
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-col">
+                  {/* Model */}
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Model</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {selectedDrone.model}
+                    </span>
                   </div>
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Battery
-                    </p>
+
+                  {/* Serial Number */}
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Serial Number
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {selectedDrone.serial_number}
+                    </span>
+                  </div>
+
+                  {/* Battery */}
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Battery Level
+                    </span>
                     <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        {selectedDrone.status?.battery_level || 0}%
+                      </span>
                       <Battery
-                        size={14}
+                        size={16}
                         className={
                           selectedDrone.status?.battery_level &&
                           selectedDrone.status.battery_level < 20
@@ -661,22 +770,21 @@ export default function DronesClient({
                             : "text-emerald-500"
                         }
                       />
-                      <p className="text-sm font-semibold text-foreground">
-                        {selectedDrone.status?.battery_level || 0}%
-                      </p>
                     </div>
                   </div>
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Officer
-                    </p>
-                    <p className="text-sm font-semibold text-foreground truncate">
+
+                  {/* Officer */}
+                  <div className="flex justify-between items-center py-3 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Assigned Officer
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
                       {selectedDrone.assigned_officer_name || "Unassigned"}
-                    </p>
+                    </span>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-border flex flex-col gap-2">
+                <div className="pt-4 flex flex-col gap-2">
                   <button
                     onClick={() => setIsEditing(true)}
                     className="w-full bg-muted hover:bg-muted/80 text-foreground font-medium py-2 rounded-lg transition-colors"
