@@ -4,6 +4,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { getSession } from "next-auth/react";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 export interface DjangoError {
@@ -81,10 +82,12 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response) {
-      throw new ApiError(
+      const apiError = new ApiError(
         error.response.status,
         error.response.data as DjangoError,
       );
+      toast.error(apiError.message);
+      throw apiError;
     }
     return Promise.reject(error);
   },
