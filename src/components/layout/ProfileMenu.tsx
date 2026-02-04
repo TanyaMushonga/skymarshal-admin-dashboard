@@ -4,17 +4,17 @@ import React, { useState, useRef, useEffect } from "react";
 import { User, LogOut, Sun, Moon, Monitor, Settings } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { useSession, signOut } from "next-auth/react";
-import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { useLogout } from "@/hooks/useLogout";
 
 export default function ProfileMenu() {
   const { data: session } = useSession();
   const { setTheme, theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
+
+  const { logout } = useLogout();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -27,18 +27,7 @@ export default function ProfileMenu() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      if (session?.refreshToken) {
-        await api.post("/auth/logout/", { refresh: session.refreshToken });
-      }
-      toast.info("Logging out...");
-    } catch (error) {
-      console.error("Logout API failed", error);
-      toast.error("Server logout failed, clearing local session.");
-    } finally {
-      // Always sign out of the client session
-      await signOut({ callbackUrl: "/login" });
-    }
+    await logout();
   };
 
   const getInitials = (email?: string | null) => {
