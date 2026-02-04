@@ -21,6 +21,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Sheet from "@/components/ui/Sheet";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 // Simple debounce hook
 function useDebounce<T>(value: T, delay: number): [T] {
@@ -71,6 +72,32 @@ export default function DronesClient({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<Partial<Drone>>({});
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // ... (rest of code)
+
+  const handleDeleteClick = () => {
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedDrone || !selectedDrone.drone_id) return;
+    setLoading(true);
+
+    try {
+      await api.delete(`/drones/${selectedDrone.drone_id}/`);
+      toast.success("Drone deleted successfully");
+      setDrones((prev) => prev.filter((d) => d.id !== selectedDrone.id));
+      setIsSheetOpen(false);
+      setSelectedDrone(null);
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to delete drone:", error);
+    } finally {
+      setLoading(false);
+      setDeleteConfirmOpen(false);
+    }
+  };
 
   // Sync drones with server props on navigation
   useEffect(() => {
@@ -240,7 +267,9 @@ export default function DronesClient({
 
       // Update list
       setDrones((prev) =>
-        prev.map((d) => (d.drone_id === updatedDrone.drone_id ? updatedDrone : d)),
+        prev.map((d) =>
+          d.drone_id === updatedDrone.drone_id ? updatedDrone : d,
+        ),
       );
 
       // Update selected
@@ -268,7 +297,9 @@ export default function DronesClient({
     setLoading(true);
     try {
       await api.delete(`/drones/${selectedDrone.drone_id}/`);
-      setDrones((prev) => prev.filter((d) => d.drone_id !== selectedDrone.drone_id));
+      setDrones((prev) =>
+        prev.filter((d) => d.drone_id !== selectedDrone.drone_id),
+      );
       setIsSheetOpen(false);
       toast.success("Drone deleted successfully");
       router.refresh();
@@ -653,7 +684,7 @@ export default function DronesClient({
                     Edit Details
                   </button>
                   <button
-                    onClick={handleDeleteDrone}
+                    onClick={handleDeleteClick}
                     className="w-full border border-destructive/20 text-destructive hover:bg-destructive/10 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
                     <Trash2 size={16} /> Delete Drone
@@ -663,6 +694,18 @@ export default function DronesClient({
             )}
           </div>
         )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="Delete Drone?"
+          description="Are you sure you want to delete this drone? This action cannot be undone and will remove the drone from the fleet permanently."
+          confirmText="Delete Drone"
+          variant="destructive"
+          loading={loading}
+        />
       </Sheet>
 
       {/* Add Modal - Kept as is */}
