@@ -234,13 +234,13 @@ export default function DronesClient({
       };
 
       const updatedDrone = await api.patch<Drone>(
-        `/drones/${selectedDrone.id}/`,
+        `/drones/${selectedDrone.drone_id}/`,
         payload,
       );
 
       // Update list
       setDrones((prev) =>
-        prev.map((d) => (d.id === updatedDrone.id ? updatedDrone : d)),
+        prev.map((d) => (d.drone_id === updatedDrone.drone_id ? updatedDrone : d)),
       );
 
       // Update selected
@@ -267,8 +267,8 @@ export default function DronesClient({
 
     setLoading(true);
     try {
-      await api.delete(`/drones/${selectedDrone.id}/`);
-      setDrones((prev) => prev.filter((d) => d.id !== selectedDrone.id));
+      await api.delete(`/drones/${selectedDrone.drone_id}/`);
+      setDrones((prev) => prev.filter((d) => d.drone_id !== selectedDrone.drone_id));
       setIsSheetOpen(false);
       toast.success("Drone deleted successfully");
       router.refresh();
