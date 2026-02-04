@@ -22,12 +22,9 @@ export interface User {
 }
 
 export interface DroneStatus {
-  id: number;
-  drone_id: string;
   battery_level: number;
   signal_strength: number;
-  status: "online" | "offline" | "maintenance" | "error" | "emergency";
-  updated_at: string;
+  status: "online" | "offline" | "maintenance" | "error";
 }
 
 export interface DroneLocation {
@@ -39,16 +36,17 @@ export interface DroneLocation {
 
 export interface Drone {
   id: number;
-  drone_id: string;
+  drone_id: string; // Unique Identifier used in URLs (e.g., "DRONE-001")
   name: string;
   model: string;
   serial_number: string;
   is_active: boolean;
-  assigned_officer?: number | null;
-  assigned_officer_name?: string;
-  status?: DroneStatus;
-  latest_location?: DroneLocation;
+  assigned_officer: number | null; // ID of the assigned user
+  assigned_officer_name: string; // Read-only helper
+  status: DroneStatus;
+  latest_location: DroneLocation | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Patrol {
