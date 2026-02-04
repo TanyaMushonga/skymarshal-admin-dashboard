@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
+          console.log("Attempting login for:", credentials.email);
           const response = await axios.post(
             `${API_BASE_URL}/auth/login/admin/`,
             {
@@ -45,16 +46,21 @@ export const authOptions: NextAuthOptions = {
           );
 
           const user = response.data;
+          console.log("Login Response Data Keys:", Object.keys(user));
+          if (user.refresh) console.log("Refresh token present in response");
+          else console.log("Refresh token MISSING in response");
 
           if (user) {
+            console.log("Authorize returning user object with tokens");
             return {
               ...user.user,
-              access: user.access,
-              refresh: user.refresh,
+              accessToken: user.access,
+              refreshToken: user.refresh,
             };
           }
           return null;
         } catch (error) {
+          console.error("Login Authorization Error:", error);
           return null;
         }
       },
@@ -64,9 +70,11 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // Initial sign in
       if (user && account) {
+        console.log("JWT Callback - Initial Sign In");
+        console.log("User object keys:", Object.keys(user));
         return {
-          accessToken: (user as any).access,
-          refreshToken: (user as any).refresh,
+          accessToken: (user as any).accessToken,
+          refreshToken: (user as any).refreshToken,
           accessTokenExpires: Date.now() + 60 * 60 * 1000, // 1 hour
           user,
         };
@@ -77,6 +85,7 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
+      console.log("JWT Callback - Token Expired, Refreshing");
       // Access token has expired, try to update it
       return refreshAccessToken(token);
     },
@@ -85,6 +94,8 @@ export const authOptions: NextAuthOptions = {
       session.refreshToken = token.refreshToken as string;
       session.user = token.user as any;
       session.error = token.error as string;
+      if (!session.refreshToken)
+        console.warn("Session Callback - Missing Refresh Token");
       return session;
     },
   },
@@ -94,5 +105,5 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-for-dev-only",
+  secret: process.env.NEXTAUTH_SECRET!,
 };
