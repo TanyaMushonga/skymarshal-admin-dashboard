@@ -38,8 +38,12 @@ const StatCard: React.FC<StatCardProps> = ({
           </span>
         )}
       </div>
-      <h3 className="text-muted-foreground text-sm font-medium">{label}</h3>
-      <p className="text-2xl font-black mt-1 text-foreground">{value}</p>
+      <h3 className="text-muted-foreground text-xs font-black uppercase tracking-[0.2em] mb-1">
+        {label}
+      </h3>
+      <p className="text-3xl font-black text-foreground tabular-nums tracking-tighter">
+        {value}
+      </p>
     </div>
   );
 };
