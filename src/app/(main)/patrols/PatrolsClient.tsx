@@ -1,143 +1,195 @@
 "use client";
 
-import React, { useState } from "react";
-import { Patrol } from "@/types";
-import { MoreVertical, Shield, Clock, MapPin, Search } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Patrol, PaginatedResponse } from "@/types";
+import { History, Plus, Filter, Search, Loader2 } from "lucide-react";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import PatrolListItem from "./components/PatrolListItem";
+import StartPatrolModal from "./components/StartPatrolModal";
+import StatCard from "@/components/ui/StatCard";
 
 interface PatrolsClientProps {
-  initialPatrols: Patrol[];
+  initialData: PaginatedResponse<Patrol>;
+  currentPage: number;
 }
 
-export default function PatrolsClient({ initialPatrols }: PatrolsClientProps) {
-  const [patrols] = useState<Patrol[]>(initialPatrols);
+export default function PatrolsClient({
+  initialData,
+  currentPage,
+}: PatrolsClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      case "COMPLETED":
-        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
-      case "CANCELLED":
-        return "bg-red-500/10 text-red-500 border-red-500/20";
-      case "SCHEDULED":
-        return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      default:
-        return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+  const [patrols, setPatrols] = useState<Patrol[]>(initialData.results);
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Stats
+  const activeCount = patrols.filter((p) => p.status === "ACTIVE").length;
+  const completedToday = patrols.filter((p) => p.status === "COMPLETED").length; // This is a bit naive but fine for UI display of current set
+
+  const refreshData = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams(searchParams.toString());
+      const response = await api.get<PaginatedResponse<Patrol>>(
+        `/patrols/?${params.toString()}`,
+      );
+      setPatrols(response.results || []);
+    } catch (error) {
+      toast.error("Failed to refresh patrols");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleEndPatrol = async (id: number) => {
+    try {
+      await api.post(`/patrols/${id}/end/`);
+      toast.success("Patrol ended");
+      refreshData();
+    } catch (error) {
+      toast.error("Failed to end patrol");
+    }
+  };
+
+  const handleUpdateConfig = (id: number) => {
+    // For now, let's just show a toast, or we could open another modal
+    toast.info("Config update coming soon");
+  };
+
+  const updateFilters = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    params.set("page", "1");
+    router.push(`/patrols?${params.toString()}`);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-100">
-            Mission Patrols
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <History className="text-primary" />
+            Patrol Management
           </h1>
-          <p className="text-sm text-slate-400">
-            Monitor and manage active surveillance missions.
+          <p className="text-sm text-muted-foreground">
+            Track and manage your aerial surveillance missions.
           </p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm">
-            Schedule Patrol
-          </button>
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 group"
+        >
+          <Plus
+            size={20}
+            className="group-hover:rotate-90 transition-transform"
+          />
+          Start New Patrol
+        </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-800/40 backdrop-blur-md p-4 rounded-xl border border-slate-800">
-        <div className="relative w-full md:w-96">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search mission ID or drone..."
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-          />
-        </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <select className="flex-1 sm:flex-none bg-slate-900/50 border border-slate-700 text-slate-300 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/50">
-            <option>All Status</option>
-            <option>Active</option>
-            <option>Completed</option>
-            <option>Scheduled</option>
-          </select>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <StatCard
+          label="Active Patrols"
+          value={activeCount.toString()}
+          icon={<History size={24} />}
+          color="emerald"
+        />
+        <StatCard
+          label="Completed Missions"
+          value={completedToday.toString()}
+          icon={<Plus size={24} />}
+          color="indigo"
+        />
+        <StatCard
+          label="Total System Uptime"
+          value="99.9%"
+          icon={<Filter size={24} />}
+          color="blue"
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {patrols.map((patrol) => (
-          <div
-            key={patrol.id}
-            className="bg-slate-800/40 backdrop-blur-md rounded-xl p-5 border border-slate-800 hover:border-slate-700 transition-colors group"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                  <Shield size={20} />
-                </div>
-                <div>
-                  <h3 className="text-slate-100 font-bold text-sm">
-                    {patrol.patrol_id}
-                  </h3>
-                  <p className="text-xs text-slate-500 font-mono">
-                    Drone: {patrol.drone_name}
-                  </p>
-                </div>
-              </div>
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded border ${getStatusBadge(
-                  patrol.status,
-                )}`}
-              >
-                {patrol.status}
-              </span>
-            </div>
-
-            <div className="space-y-3 pt-3 border-t border-slate-800">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <MapPin size={14} className="text-red-500/60" />
-                <span className="truncate">{patrol.address_name}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Clock size={14} />
-                  <span>Duration</span>
-                </div>
-                <span className="text-slate-200 font-medium">32m 14s</span>
-              </div>
-              <div className="pt-2">
-                <div className="flex justify-between text-[10px] text-slate-500 mb-1">
-                  <span>Progress</span>
-                  <span>{patrol.status === "ACTIVE" ? "65%" : "100%"}</span>
-                </div>
-                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${
-                      patrol.status === "ACTIVE"
-                        ? "bg-blue-500"
-                        : "bg-slate-500"
-                    }`}
-                    style={{
-                      width: patrol.status === "ACTIVE" ? "65%" : "100%",
-                    }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-4 border-t border-slate-800 flex gap-2">
-              <button className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-bold transition-colors">
-                Details
-              </button>
-              <button className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-500 transition-colors">
-                <MoreVertical size={16} />
-              </button>
-            </div>
+      <div className="bg-card/30 backdrop-blur-md border border-border rounded-2xl p-4 md:p-6">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search by Drone ID or Officer..."
+              className="w-full bg-muted/50 border border-border rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40 transition-all font-medium"
+              onKeyUp={(e) => {
+                if (e.key === "Enter") {
+                  updateFilters("search", (e.target as HTMLInputElement).value);
+                }
+              }}
+            />
           </div>
-        ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={searchParams.get("status") || ""}
+              onChange={(e) => updateFilters("status", e.target.value)}
+              className="bg-muted/50 border border-border rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/40 text-foreground font-bold"
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active Only</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            <div className="w-px h-8 bg-border hidden sm:block mx-1" />
+            <button
+              onClick={() => refreshData()}
+              disabled={loading}
+              className="p-2 rounded-xl bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {loading ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Filter size={18} />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {patrols.length > 0 ? (
+            patrols.map((patrol) => (
+              <PatrolListItem
+                key={patrol.id || `${patrol.drone_id}-${patrol.start_time}`}
+                patrol={patrol}
+                onEnd={handleEndPatrol}
+                onUpdateConfig={handleUpdateConfig}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20 bg-muted/10 rounded-2xl border-2 border-dashed border-border/50">
+              <History size={48} className="text-muted-foreground/30 mb-4" />
+              <p className="text-foreground font-bold">No patrols found</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Adjust your filters or start a new mission.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {initialData.count > 10 && (
+          <div className="mt-8 flex justify-center gap-2">
+            {/* Pagination controls */}
+          </div>
+        )}
       </div>
+
+      <StartPatrolModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onStarted={refreshData}
+      />
     </div>
   );
 }
