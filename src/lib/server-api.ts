@@ -19,6 +19,10 @@ serverApiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const session = await getServerSession(authOptions);
 
+    if (session?.error === "RefreshAccessTokenError") {
+      throw new Error("UNAUTHORIZED_ACCESS");
+    }
+
     if (session?.accessToken) {
       config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
