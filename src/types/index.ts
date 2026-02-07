@@ -51,18 +51,19 @@ export interface Drone {
 
 export interface Patrol {
   id: number;
-  patrol_id?: string;
-  drone_id: string;
-  drone_name?: string;
-  officer_name: string;
-  start_time: string;
-  end_time?: string;
-  status: "ACTIVE" | "COMPLETED" | "CANCELLED" | "SCHEDULED" | "SUSPENDED";
-  address_name?: string;
-  patrol_config?: {
-    speed_limit: number;
-    flight_path: number[][];
+  drone: number; // Database ID of the drone
+  drone_id: string; // Unique Identifier (e.g., "DRONE-001")
+  officer: number; // Database ID of the assigned officer
+  officer_name: string; // Email or name of the officer (Read-only)
+  start_time: string; // ISO 8601 format
+  end_time: string | null; // ISO 8601 format or null if ACTIVE
+  patrol_config: {
+    speed_limit?: number;
+    restricted_zones?: any[];
+    [key: string]: any;
   };
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED";
+  created_at: string;
 }
 
 export interface Detection {
