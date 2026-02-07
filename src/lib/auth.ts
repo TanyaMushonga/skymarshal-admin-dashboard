@@ -20,7 +20,7 @@ async function refreshAccessToken(token: any) {
       ...token,
       accessToken: response.data.access,
       refreshToken: response.data.refresh ?? token.refreshToken,
-      accessTokenExpires: Date.now() + 60 * 60 * 1000,
+      accessTokenExpires: Date.now() + 5 * 60 * 1000,
       error: null,
     };
   } catch (error: any) {
@@ -33,7 +33,7 @@ async function refreshAccessToken(token: any) {
       error: "RefreshAccessTokenError",
       // Update expiry even on failure to prevent infinite refresh loop
       // This will force it to wait another hour before trying again (or until user re-logs)
-      accessTokenExpires: Date.now() + 60 * 60 * 1000,
+      accessTokenExpires: Date.now() + 5 * 60 * 1000,
     };
   }
 }
@@ -89,7 +89,7 @@ export const authOptions: NextAuthOptions = {
         return {
           accessToken: (user as any).accessToken,
           refreshToken: (user as any).refreshToken,
-          accessTokenExpires: Date.now() + 60 * 60 * 1000, // 1 hour
+          accessTokenExpires: Date.now() + 5 * 60 * 1000, // 5 minutes
           user,
         };
       }
