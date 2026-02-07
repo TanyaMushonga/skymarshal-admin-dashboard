@@ -184,7 +184,7 @@ export default function DashboardClient({
               >
                 <img
                   src={v.image_snapshot}
-                  className="w-14 h-10 md:w-16 md:h-12 object-cover rounded-md flex-shrink-0"
+                  className="w-14 h-10 md:w-16 md:h-12 object-cover rounded-md shrink-0"
                   alt="evidence"
                 />
                 <div className="flex-1 min-w-0">
