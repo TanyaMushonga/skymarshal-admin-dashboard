@@ -110,7 +110,7 @@ export default function AnalyticsClient() {
             Violations
           </h3>
           <div className="h-64 md:h-72">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={DAILY_ACTIVITY_DATA}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -154,7 +154,7 @@ export default function AnalyticsClient() {
             Type
           </h3>
           <div className="h-64 md:h-72">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={VIOLATION_TYPE_DATA}>
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -186,7 +186,7 @@ export default function AnalyticsClient() {
             Vehicle Distribution
           </h3>
           <div className="h-56 md:h-64 flex flex-col md:flex-row items-center gap-4">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie
                   data={VEHICLE_TYPE_DATA}
