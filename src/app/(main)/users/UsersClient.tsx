@@ -54,7 +54,7 @@ export default function UsersClient({ initialUsers }: UsersClientProps) {
       <div className="grid grid-cols-1 gap-4">
         {users.map((user) => (
           <div
-            key={user.id}
+            key={user.id || user.email}
             className="bg-slate-800/40 backdrop-blur-md rounded-2xl p-5 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:border-slate-700 transition-colors"
           >
             <div className="flex items-center gap-4">
