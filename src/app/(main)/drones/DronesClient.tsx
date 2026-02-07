@@ -487,7 +487,7 @@ export default function DronesClient({
             <tbody className="divide-y divide-border">
               {drones.map((drone) => (
                 <tr
-                  key={drone.id}
+                  key={drone.id || drone.drone_id}
                   onClick={() => handleRowClick(drone)}
                   className="hover:bg-muted/50 transition-colors group cursor-pointer"
                 >
@@ -690,7 +690,10 @@ export default function DronesClient({
                   >
                     <option value="">Unassigned</option>
                     {officers.map((officer) => (
-                      <option key={officer.id} value={officer.id}>
+                      <option
+                        key={officer.id || officer.email}
+                        value={officer.id}
+                      >
                         {officer.first_name} {officer.last_name}
                       </option>
                     ))}
