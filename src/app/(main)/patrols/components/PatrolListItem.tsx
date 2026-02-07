@@ -96,7 +96,7 @@ export default function PatrolListItem({
             <p className="text-base font-black text-foreground tabular-nums leading-none mb-1">
               {duration}
             </p>
-            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em]">
+            <p className="text-xs text-muted-foreground uppercase font-black tracking-[0.2em]">
               Mission Time
             </p>
           </div>
