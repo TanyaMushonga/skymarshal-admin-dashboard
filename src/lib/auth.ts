@@ -5,21 +5,35 @@ import axios from "axios";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 async function refreshAccessToken(token: any) {
   try {
+    console.log("Refreshing access token...");
+    if (!token.refreshToken) {
+      console.error("No refresh token available");
+      throw new Error("No refresh token");
+    }
+
     const response = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
       refresh: token.refreshToken,
     });
 
+    console.log("Token refresh successful");
     return {
       ...token,
       accessToken: response.data.access,
-      // Fallback to old refresh token if new one isn't provided
       refreshToken: response.data.refresh ?? token.refreshToken,
-      accessTokenExpires: Date.now() + 60 * 60 * 1000, // Assuming 1 hour, adjust based on your Django settings
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
+      error: null,
     };
-  } catch (error) {
+  } catch (error: any) {
+    console.error(
+      "Error refreshing access token:",
+      error.response?.data || error.message,
+    );
     return {
       ...token,
       error: "RefreshAccessTokenError",
+      // Update expiry even on failure to prevent infinite refresh loop
+      // This will force it to wait another hour before trying again (or until user re-logs)
+      accessTokenExpires: Date.now() + 60 * 60 * 1000,
     };
   }
 }
