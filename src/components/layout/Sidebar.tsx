@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "@/lib/constants";
 import { ShieldAlert, X } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   return (
     <aside
@@ -67,16 +69,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl">
-          <img
-            src="https://picsum.photos/seed/admin/40/40"
-            className="w-10 h-10 rounded-lg"
-            alt="Admin"
-          />
+          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center font-bold text-primary">
+            {session?.user?.email?.substring(0, 2).toUpperCase() || "OP"}
+          </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-semibold truncate text-foreground">
-              John Doe
+            <p className="text-sm font-bold truncate text-foreground">
+              {session?.user?.name ||
+                session?.user?.email?.split("@")[0] ||
+                "Operative"}
             </p>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-[10px] text-muted-foreground truncate uppercase font-black">
               System Admin
             </p>
           </div>
