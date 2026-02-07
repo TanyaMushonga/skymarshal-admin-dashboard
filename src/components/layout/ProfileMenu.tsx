@@ -36,8 +36,7 @@ export default function ProfileMenu() {
   };
 
   const userEmail = session?.user?.email || "operative@skymarshal.agency";
-  // Assuming we might have name in future or custom session type, fallback to email part
-  const userName = userEmail.split("@")[0];
+  const userName = session?.user?.name || userEmail.split("@")[0];
 
   return (
     <div className="relative" ref={menuRef}>
