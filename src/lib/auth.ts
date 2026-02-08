@@ -80,16 +80,32 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
       // Initial sign in
       if (user && account) {
         console.log("JWT Callback - Initial Sign In");
-        console.log("User object keys:", Object.keys(user));
         return {
+          ...token,
           accessToken: (user as any).accessToken,
           refreshToken: (user as any).refreshToken,
           accessTokenExpires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-          user,
+          user: {
+            id: (user as any).id,
+            email: (user as any).email,
+            first_name: (user as any).first_name,
+            last_name: (user as any).last_name,
+            role: (user as any).role,
+            avatar: (user as any).avatar,
+          },
+        };
+      }
+
+      // Handle session updates
+      if (trigger === "update" && session?.user) {
+        console.log("JWT Callback - Manual Update Triggered");
+        token.user = {
+          ...(token.user as any),
+          ...session.user,
         };
       }
 
