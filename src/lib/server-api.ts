@@ -2,6 +2,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { ApiError, DjangoError } from "./api";
+import { redirect } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -20,7 +21,7 @@ serverApiClient.interceptors.request.use(
     const session = await getServerSession(authOptions);
 
     if (session?.error === "RefreshAccessTokenError") {
-      throw new Error("UNAUTHORIZED_ACCESS");
+      redirect("/login?expired=true");
     }
 
     if (session?.accessToken) {
@@ -46,8 +47,7 @@ serverApiClient.interceptors.response.use(
 
       // Special handling for 401 in Server Actions
       if (status === 401) {
-        // We throw a specific error that can be caught by 'error.js' or the component
-        throw new Error("UNAUTHORIZED_ACCESS");
+        redirect("/login?expired=true");
       }
 
       throw new ApiError(status, data);
