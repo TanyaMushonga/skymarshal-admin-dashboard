@@ -23,7 +23,7 @@ export default async function ProfilePage() {
       email: session.user.email,
       first_name: session.user.name?.split(" ")[0] || "",
       last_name: session.user.name?.split(" ").slice(1).join(" ") || "",
-      role: session.user.role || "officer",
+      role: session.user.role!,
       is_officer: session.user.role === "officer",
       is_certified_pilot: false,
       is_on_duty: false,
