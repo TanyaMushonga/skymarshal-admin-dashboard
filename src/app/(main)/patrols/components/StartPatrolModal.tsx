@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Modal from "@/components/ui/Modal";
-import { Drone } from "@/types";
+import { Drone, Patrol } from "@/types";
 import { api } from "@/lib/api";
 import {
   Plane,
@@ -20,12 +20,14 @@ interface StartPatrolModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStarted: () => void;
+  editPatrol?: Patrol;
 }
 
 export default function StartPatrolModal({
   isOpen,
   onClose,
   onStarted,
+  editPatrol,
 }: StartPatrolModalProps) {
   const [drones, setDrones] = useState<Drone[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -49,6 +51,39 @@ export default function StartPatrolModal({
 
   useEffect(() => {
     if (isOpen) {
+      if (editPatrol) {
+        setSelectedDroneId(String(editPatrol.drone));
+        setSelectedOfficerId(String(editPatrol.officer));
+        setSpeedLimit(
+          editPatrol.patrol_config?.speed_limit ||
+            editPatrol.patrol_config?.speed ||
+            60,
+        );
+        setRestrictedZones(
+          editPatrol.patrol_config?.restricted_zones?.join(", ") || "",
+        );
+        setRoute(editPatrol.patrol_config?.flight_path || []);
+        setCustomFields(
+          Object.entries(editPatrol.patrol_config || {})
+            .filter(
+              ([key]) =>
+                ![
+                  "speed_limit",
+                  "speed",
+                  "restricted_zones",
+                  "flight_path",
+                ].includes(key),
+            )
+            .map(([key, value]) => ({ key, value: String(value) })),
+        );
+      } else {
+        setSelectedDroneId("");
+        setSelectedOfficerId("");
+        setSpeedLimit(80);
+        setRestrictedZones("");
+        setRoute([]);
+        setCustomFields([]);
+      }
       fetchInitialData();
       loadLeaflet();
     }
@@ -171,7 +206,7 @@ export default function StartPatrolModal({
     setSubmitting(true);
     try {
       const config: any = {
-        speed_limit: speedLimit,
+        speed_limit: Number(speedLimit),
         restricted_zones: restrictedZones
           .split(",")
           .map((z) => z.trim())
@@ -186,12 +221,30 @@ export default function StartPatrolModal({
         }
       });
 
-      await api.post("/patrols/start/", {
-        drone_id: selectedDroneId,
-        officer: selectedOfficerId,
-        patrol_config: config,
-      });
-      toast.success("Patrol started successfully");
+      // Be robust with field names and types for the backend
+      const droneId = isNaN(Number(selectedDroneId))
+        ? selectedDroneId
+        : Number(selectedDroneId);
+      const officerId = isNaN(Number(selectedOfficerId))
+        ? selectedOfficerId
+        : Number(selectedOfficerId);
+
+      const payload: any = {
+        drone_id:
+          drones.find((d) => String(d.id) === String(selectedDroneId))
+            ?.drone_id || String(selectedDroneId),
+        officer: officerId,
+        config: config, // Alternative key used by some backends
+        ...config, // Flattened for root-level coverage
+      };
+
+      if (editPatrol) {
+        await api.patch(`/patrols/${editPatrol.id}/`, payload);
+        toast.success("Patrol updated successfully");
+      } else {
+        await api.post("/patrols/start/", payload);
+        toast.success("Patrol started successfully");
+      }
       onStarted();
       onClose();
     } catch (error: any) {
@@ -206,7 +259,12 @@ export default function StartPatrolModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Start New Patrol" size="xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editPatrol ? "Edit Patrol Configuration" : "Start New Patrol"}
+      size="xl"
+    >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-muted-foreground mb-2">
@@ -223,11 +281,12 @@ export default function StartPatrolModal({
             <select
               value={selectedDroneId}
               onChange={(e) => setSelectedDroneId(e.target.value)}
-              className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium appearance-none"
+              className="w-full bg-muted border border-border rounded-lg px-4 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold appearance-none"
+              disabled={!!editPatrol}
             >
               <option value="">Select a drone...</option>
               {drones.map((drone) => (
-                <option key={drone.id} value={drone.drone_id}>
+                <option key={drone.id} value={drone.id}>
                   {drone.name} ({drone.drone_id})
                 </option>
               ))}
@@ -252,7 +311,7 @@ export default function StartPatrolModal({
           <select
             value={selectedOfficerId}
             onChange={(e) => setSelectedOfficerId(e.target.value)}
-            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium appearance-none"
+            className="w-full bg-muted border border-border rounded-lg px-4 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold appearance-none"
           >
             <option value="">Select an officer...</option>
             {users.map((user) => (
@@ -267,7 +326,7 @@ export default function StartPatrolModal({
           <label className="block text-sm font-medium text-muted-foreground">
             Patrol Route
           </label>
-          <div className="relative rounded-xl overflow-hidden border border-border h-48 bg-muted/20">
+          <div className="relative rounded-lg overflow-hidden border border-border h-48 bg-muted/20">
             <div ref={mapContainerRef} className="w-full h-full z-0" />
             <div className="absolute top-2 right-2 z-40 flex flex-col gap-1">
               <button
@@ -307,7 +366,7 @@ export default function StartPatrolModal({
                 type="number"
                 value={speedLimit}
                 onChange={(e) => setSpeedLimit(parseInt(e.target.value))}
-                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
+                className="w-full bg-muted border border-border rounded-lg px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all font-semibold"
               />
             </div>
             <div>
@@ -391,7 +450,7 @@ export default function StartPatrolModal({
           <button
             type="submit"
             disabled={submitting || !selectedDroneId}
-            className={`w-full font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+            className={`w-full font-bold py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 ${
               submitting || !selectedDroneId
                 ? "bg-muted text-muted-foreground cursor-not-allowed"
                 : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
@@ -400,12 +459,12 @@ export default function StartPatrolModal({
             {submitting ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
-                Initializing...
+                Processing...
               </>
             ) : (
               <>
                 <Plane size={18} />
-                Launch Mission
+                {editPatrol ? "Save Changes" : "Launch Mission"}
               </>
             )}
           </button>
