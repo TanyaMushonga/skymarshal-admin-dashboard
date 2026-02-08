@@ -1,15 +1,26 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./layout/Sidebar";
 import Header from "./layout/Header";
+import {
+  SessionProvider,
+  useSession401,
+  setGlobalSessionExpiredHandler,
+} from "./SessionProvider";
 
 interface DashboardShellProps {
   children: React.ReactNode;
 }
 
-const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
+function DashboardShellInner({ children }: DashboardShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { showSessionExpired } = useSession401();
+
+  // Register global handler on mount
+  useEffect(() => {
+    setGlobalSessionExpiredHandler(showSessionExpired);
+  }, [showSessionExpired]);
 
   const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
@@ -33,6 +44,14 @@ const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
         <div className="p-4 md:p-8 flex-1 overflow-y-auto">{children}</div>
       </main>
     </div>
+  );
+}
+
+const DashboardShell: React.FC<DashboardShellProps> = ({ children }) => {
+  return (
+    <SessionProvider>
+      <DashboardShellInner>{children}</DashboardShellInner>
+    </SessionProvider>
   );
 };
 
