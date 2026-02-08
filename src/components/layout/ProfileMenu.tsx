@@ -66,7 +66,7 @@ export default function ProfileMenu() {
           <p className="text-sm font-bold leading-none">{fullName}</p>
           <div
             className={`mt-1.5 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider inline-block
-            ${role === "admin" ? "bg-primary/20 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-border"}
+            ${role?.toLowerCase() === "admin" ? "bg-primary/20 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-border"}
           `}
           >
             {role}
@@ -82,8 +82,8 @@ export default function ProfileMenu() {
               {userEmail}
             </p>
             <div
-              className={`mt-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-block
-              ${role === "admin" ? "bg-primary/20 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-border"}
+              className={`mt-2 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest inline-block
+              ${role?.toLowerCase() === "admin" ? "bg-primary/20 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-border"}
             `}
             >
               {role}
