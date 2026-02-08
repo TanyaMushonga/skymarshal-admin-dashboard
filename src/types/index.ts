@@ -22,6 +22,7 @@ export interface User {
   is_on_duty: boolean;
   last_known_lat?: number;
   last_known_lon?: number;
+  avatar?: string;
 }
 
 export interface CreateUserRequest {
@@ -50,6 +51,7 @@ export interface UpdateUserRequest {
   pilot_license_number?: string;
   license_expiry_date?: string;
   is_2fa_enabled?: boolean;
+  avatar?: string;
 }
 
 export interface DroneStatus {
@@ -94,6 +96,15 @@ export interface Patrol {
     [key: string]: any;
   };
   status: "ACTIVE" | "COMPLETED" | "CANCELLED";
+
+  // Live Telemetry (included in ACTIVE patrols)
+  latest_location?: DroneLocation | null;
+  battery_level?: number;
+  status_display?: "online" | "offline" | "error";
+  flight_duration_seconds?: number;
+  detection_count?: number;
+  violation_count?: number;
+
   created_at: string;
 }
 
