@@ -17,6 +17,7 @@ import {
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface LotteriesClientProps {
   initialData: PaginatedResponse<Lottery>;
@@ -42,6 +43,10 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingLottery, setEditingLottery] = useState<Lottery | null>(null);
   const [drawingLottery, setDrawingLottery] = useState<number | null>(null);
+  const [confirmDrawDialog, setConfirmDrawDialog] = useState<{
+    isOpen: boolean;
+    lotteryId: number | null;
+  }>({ isOpen: false, lotteryId: null });
 
   const fetchData = async () => {
     setLoading(true);
@@ -92,19 +97,26 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
     updateFilters("search", search);
   };
 
-  const handleRunDraw = async (lotteryId: number) => {
-    if (
-      !confirm(
-        "Are you sure you want to run this lottery draw? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
+  const handleRunDraw = async () => {
+    const lotteryId = confirmDrawDialog.lotteryId;
+    if (!lotteryId) return;
 
+    // Find the lottery to get its data
+    const lottery = lotteries.find((l) => l.id === lotteryId);
+    if (!lottery) return;
+
+    setConfirmDrawDialog({ isOpen: false, lotteryId: null });
     setDrawingLottery(lotteryId);
     try {
       const result = await api.post<LotteryDrawResult>(
         `/compliance/lotteries/${lotteryId}/run_draw/`,
+        {
+          name: lottery.name,
+          draw_date: lottery.draw_date,
+          pool_amount: lottery.pool_amount,
+          minimum_points: lottery.minimum_points,
+          warnings: lottery.warnings || "",
+        },
       );
       toast.success(
         `Lottery drawn! ${result.winners_count} winners selected from pool of $${result.pool}`,
@@ -326,7 +338,12 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
                               <Edit size={16} className="text-blue-500" />
                             </button>
                             <button
-                              onClick={() => handleRunDraw(lottery.id)}
+                              onClick={() =>
+                                setConfirmDrawDialog({
+                                  isOpen: true,
+                                  lotteryId: lottery.id,
+                                })
+                              }
                               disabled={
                                 drawingLottery === lottery.id ||
                                 parseFloat(lottery.pool_amount) <= 0
@@ -420,6 +437,18 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
           }}
         />
       )}
+
+      {/* Confirm Draw Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDrawDialog.isOpen}
+        onClose={() => setConfirmDrawDialog({ isOpen: false, lotteryId: null })}
+        onConfirm={handleRunDraw}
+        title="Run Lottery Draw"
+        description="Are you sure you want to run this lottery draw? This action cannot be undone and will automatically select winners and send SMS notifications."
+        confirmText="Run Draw"
+        variant="default"
+        loading={drawingLottery === confirmDrawDialog.lotteryId}
+      />
     </div>
   );
 }
