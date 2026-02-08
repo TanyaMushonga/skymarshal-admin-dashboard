@@ -1,24 +1,55 @@
 export enum UserRole {
-  ADMIN = "ADMIN",
-  OFFICER = "OFFICER",
-  SUPERVISOR = "SUPERVISOR",
+  ADMIN = "admin",
+  OFFICER = "officer",
+  DISPATCHER = "dispatcher",
 }
 
 export interface User {
-  id: number | string;
+  id: string; // UUID from API
   email: string;
   first_name: string;
   last_name: string;
-  role: string; // Changed from UserRole enum to string to match API "officer" vs "OFFICER"
+  role: string; // "admin", "officer", or "dispatcher"
   force_number?: string;
   unit_id?: string;
   is_officer: boolean;
   is_certified_pilot: boolean;
   pilot_license_number?: string;
+  license_expiry_date?: string;
   phone_number?: string;
+  is_2fa_enabled?: boolean;
+  requires_password_change?: boolean;
   is_on_duty: boolean;
   last_known_lat?: number;
   last_known_lon?: number;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: string;
+  force_number?: string;
+  unit_id?: string;
+  phone_number?: string;
+  is_certified_pilot?: boolean;
+  pilot_license_number?: string;
+  license_expiry_date?: string;
+  is_2fa_enabled?: boolean;
+}
+
+export interface UpdateUserRequest {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  role?: string;
+  force_number?: string;
+  unit_id?: string;
+  phone_number?: string;
+  is_certified_pilot?: boolean;
+  pilot_license_number?: string;
+  license_expiry_date?: string;
+  is_2fa_enabled?: boolean;
 }
 
 export interface DroneStatus {
@@ -69,15 +100,22 @@ export interface Patrol {
 export interface Detection {
   id: number;
   drone: number;
-  patrol: number;
+  patrol: string | null; // UUID or null
   timestamp: string;
+  frame_number: number;
   vehicle_type: string;
   confidence: number;
-  license_plate?: string;
-  speed?: number;
+  box_coordinates: number[]; // [x1, y1, x2, y2]
+  track_id: number | null;
+  license_plate?: string | null;
+  speed?: number | null;
   location: {
-    coordinates: number[];
-  };
+    type: "Point";
+    coordinates: number[]; // [longitude, latitude]
+  } | null;
+  altitude?: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ViolationEvidenceMeta {
