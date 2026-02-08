@@ -38,6 +38,14 @@ export default async function PatrolsPage({ searchParams }: PatrolsPageProps) {
     );
     initialData = response;
   } catch (error: any) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      (error as any).digest?.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
     console.error("Failed to fetch patrols:", error.message);
   }
 
