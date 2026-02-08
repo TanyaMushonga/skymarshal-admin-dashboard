@@ -35,8 +35,15 @@ export default function ProfileMenu() {
     return email.substring(0, 2).toUpperCase();
   };
 
-  const userEmail = session?.user?.email || "operative@skymarshal.agency";
-  const userName = session?.user?.name || userEmail.split("@")[0];
+  const user = session?.user as any;
+  const userEmail = user?.email || "operative@skymarshal.agency";
+  const firstName = user?.first_name || "";
+  const lastName = user?.last_name || "";
+  const role = user?.role || "Operative";
+  const fullName =
+    firstName && lastName
+      ? `${firstName} ${lastName}`.trim()
+      : user?.name || userEmail.split("@")[0];
 
   return (
     <div className="relative" ref={menuRef}>
@@ -44,24 +51,43 @@ export default function ProfileMenu() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 hover:bg-muted/50 p-2 rounded-xl transition-colors border border-transparent hover:border-border"
       >
-        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs">
-          {getInitials(userEmail)}
+        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            firstName?.charAt(0) || userEmail.charAt(0).toUpperCase() || "OP"
+          )}
         </div>
         <div className="hidden md:block text-left">
-          <p className="text-xs font-bold leading-none">{userName}</p>
-          <p className="text-[10px] text-muted-foreground uppercase font-semibold">
-            Operative
-          </p>
+          <p className="text-sm font-bold leading-none">{fullName}</p>
+          <div
+            className={`mt-1.5 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider inline-block
+            ${role === "admin" ? "bg-primary/20 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-border"}
+          `}
+          >
+            {role}
+          </div>
         </div>
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-background border border-border shadow-xl rounded-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
           <div className="p-3 border-b border-border/50 mb-2">
-            <p className="font-bold text-sm truncate">{userEmail}</p>
-            <p className="text-xs text-muted-foreground">
-              Authenticated Session
+            <p className="font-bold text-base truncate">{fullName}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {userEmail}
             </p>
+            <div
+              className={`mt-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest inline-block
+              ${role === "admin" ? "bg-primary/20 text-primary border border-primary/20" : "bg-muted text-muted-foreground border border-border"}
+            `}
+            >
+              {role}
+            </div>
           </div>
 
           <div className="space-y-1">
