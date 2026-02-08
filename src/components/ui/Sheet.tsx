@@ -9,6 +9,7 @@ interface SheetProps {
   title?: string;
   children: React.ReactNode;
   width?: string;
+  side?: "right" | "bottom";
 }
 
 export default function Sheet({
@@ -17,6 +18,7 @@ export default function Sheet({
   title,
   children,
   width = "max-w-md",
+  side = "right",
 }: SheetProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -37,28 +39,47 @@ export default function Sheet({
 
   if (!isOpen) return null;
 
+  const isRight = side === "right";
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div
+      className={`fixed inset-0 z-50 flex ${
+        isRight ? "justify-end" : "items-end justify-center"
+      }`}
+    >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity opacity-100"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-100"
         onClick={onClose}
       />
 
       {/* Sheet Content */}
       <div
-        className={`relative z-50 h-full w-full ${width} bg-background border-l border-border shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0 flex flex-col`}
+        className={`relative z-50 bg-background shadow-2xl transition-all duration-300 ease-in-out flex flex-col ${
+          isRight
+            ? `h-full w-full ${width} border-l border-border animate-in slide-in-from-right`
+            : `w-full max-w-4xl h-[80vh] rounded-t-2xl border-t border-border animate-in slide-in-from-bottom`
+        }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-xl font-bold text-foreground">{title}</h2>
+        {!isRight && (
+          <div className="w-full flex justify-center pt-4">
+            <div className="w-12 h-1.5 bg-muted rounded-full" />
+          </div>
+        )}
+        <div className="flex items-center justify-between p-6 border-b border-border/50">
+          <div>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">
+              {title}
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all bg-muted/30"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );
