@@ -1,22 +1,28 @@
-import { mockApi } from "@/lib/mockApi";
+import { server } from "@/lib/server-api";
+import { DashboardOverview } from "@/types";
 import DashboardClient from "./DashboardClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
-  const [metrics, violations, drones] = await Promise.all([
-    mockApi.getMetrics(),
-    mockApi.getViolations(),
-    mockApi.getDrones(),
-  ]);
+  let initialData: DashboardOverview | null = null;
 
-  const idleDrones = drones.filter(
-    (drone) => drone.status?.status === "offline",
-  );
+  try {
+    const data = await server.get<DashboardOverview>(
+      "/analytics/admin/dashboard/",
+    );
+    initialData = data;
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      (error as any).digest?.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
+    console.error("Failed to fetch dashboard data:", error);
+  }
 
-  return (
-    <DashboardClient
-      initialMetrics={metrics}
-      initialViolations={violations}
-      initialIdleDrones={idleDrones}
-    />
-  );
+  return <DashboardClient initialData={initialData} />;
 }
