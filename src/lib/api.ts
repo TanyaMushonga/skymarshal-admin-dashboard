@@ -80,15 +80,6 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response.data,
   async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/login?expired=true";
-      } else {
-        // This will throw a NEXT_REDIRECT error that Next.js handles
-        redirect("/login?expired=true");
-      }
-    }
-
     if (error.response) {
       const apiError = new ApiError(
         error.response.status,
@@ -98,16 +89,16 @@ apiClient.interceptors.response.use(
       // Handle 401 Unauthorized errors
       if (error.response.status === 401) {
         if (typeof window !== "undefined") {
-          // Client-side: redirect using window.location
-          window.location.href = "/login?expired=true";
+          // Client-side: trigger session expired modal
+          const { triggerSessionExpired } =
+            await import("@/components/SessionProvider");
+          triggerSessionExpired();
+          // Don't redirect immediately - let the modal handle it
+          return Promise.reject(apiError);
         } else {
           // Server-side: use Next.js redirect, which throws an error
           redirect("/login?expired=true");
         }
-        // If we reach here on the client, we've redirected.
-        // If we reach here on the server, `redirect` has already thrown.
-        // In either case, we don't want to throw apiError here.
-        return Promise.reject(error); // Or just return, as the redirect will handle it.
       }
 
       // For other errors, display a toast on the client and throw ApiError
