@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Lottery, LotteryDrawResult, PaginatedResponse } from "@/types";
 import {
   Play,
@@ -14,6 +14,7 @@ import {
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface ComplianceClientProps {
@@ -31,6 +32,10 @@ export default function ComplianceClient({
 }: ComplianceClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
+  const debouncedSearch = useDebounce(searchInput, 500);
   const [lotteries, setLotteries] = useState<Lottery[]>(initialLotteries);
   const [loading, setLoading] = useState(false);
   const [drawingLottery, setDrawingLottery] = useState<number | null>(null);
@@ -38,9 +43,6 @@ export default function ComplianceClient({
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingLotteryId, setPendingLotteryId] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || "",
-  );
   const [pagination, setPagination] = useState(
     initialPagination || { count: 0, next: null, previous: null },
   );
@@ -77,16 +79,23 @@ export default function ComplianceClient({
     }
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentSearch = params.get("search") || "";
+
+    if (debouncedSearch !== currentSearch) {
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      router.push(`/compliance?${params.toString()}`);
+    }
+  }, [debouncedSearch, router, searchParams]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams(searchParams.toString());
-    if (searchQuery) {
-      params.set("search", searchQuery);
-    } else {
-      params.delete("search");
-    }
-    params.set("page", "1");
-    router.push(`/compliance?${params.toString()}`);
   };
 
   const handlePageChange = (page: number) => {
@@ -96,7 +105,7 @@ export default function ComplianceClient({
   };
 
   const handleRefresh = () => {
-    fetchLotteries(searchQuery, currentPage);
+    fetchLotteries(searchInput, currentPage);
     router.refresh();
   };
 
@@ -116,7 +125,7 @@ export default function ComplianceClient({
         `/compliance/lotteries/${pendingLotteryId}/run_draw/`,
       );
       toast.success(`Lottery drawn! ${result.winners_count} winners selected`);
-      await fetchLotteries(searchQuery, currentPage);
+      await fetchLotteries(searchInput, currentPage);
       router.refresh();
     } catch (error: any) {
       const errorMsg =
@@ -142,7 +151,7 @@ export default function ComplianceClient({
     try {
       await api.delete(`/compliance/lotteries/${pendingLotteryId}/`);
       toast.success("Lottery deleted successfully");
-      await fetchLotteries(searchQuery, currentPage);
+      await fetchLotteries(searchInput, currentPage);
       router.refresh();
     } catch (error: any) {
       const errorMsg =
@@ -225,24 +234,22 @@ export default function ComplianceClient({
       </div>
 
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <form onSubmit={handleSearch} className="relative flex-1">
+          <Search
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={20}
+          />
           <input
             type="text"
-            placeholder="Search lotteries..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            name="search"
+            placeholder="Search by name or description..."
+            className="w-full pl-12 pr-4 py-3 bg-muted/30 border border-border/60 rounded-lg text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
-        </div>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          Search
-        </button>
-      </form>
+        </form>
+      </div>
 
       {/* Table */}
       <div className="bg-card border border-border rounded-lg overflow-hidden">
