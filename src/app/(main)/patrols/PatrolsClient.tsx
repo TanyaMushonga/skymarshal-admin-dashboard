@@ -11,6 +11,7 @@ import {
   Loader2,
   MoreVertical,
   Eye,
+  Navigation,
   Shield,
   Clock,
   User,
@@ -282,7 +283,7 @@ export default function PatrolsClient({
                             : "bg-slate-500/10 text-slate-400"
                         }`}
                       >
-                        <Shield size={18} />
+                        <Navigation size={18} />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-foreground">
