@@ -284,6 +284,33 @@ export interface OfficerStats {
   performance_rating: number;
 }
 
+export interface Lottery {
+  id: number;
+  name: string;
+  draw_date: string;
+  pool_amount: string;
+  minimum_points: number;
+  status: "OPEN" | "DRAWN" | "PAID";
+  warnings: string;
+  winners: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplianceScore {
+  id: number;
+  vehicle: string;
+  safe_driving_points: number;
+  last_observation: string;
+}
+
+export interface LotteryDrawResult {
+  status: string;
+  pool: number;
+  winners_count: number;
+  winners: string[];
+}
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
