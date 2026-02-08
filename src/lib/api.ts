@@ -5,6 +5,7 @@ import axios, {
 } from "axios";
 import { getSession } from "next-auth/react";
 import { toast } from "sonner";
+import { redirect } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
 export interface DjangoError {
@@ -57,6 +58,11 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const session = await getSession();
+    if (session?.error === "RefreshAccessTokenError") {
+      if (typeof window !== "undefined") {
+        window.location.href = "/login?expired=true";
+      }
+    }
     if (session?.accessToken) {
       config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
@@ -76,8 +82,10 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        // Redirection logic if token rotation fails or session is dead
         window.location.href = "/login?expired=true";
+      } else {
+        // This will throw a NEXT_REDIRECT error that Next.js handles
+        redirect("/login?expired=true");
       }
     }
 
@@ -86,7 +94,27 @@ apiClient.interceptors.response.use(
         error.response.status,
         error.response.data as DjangoError,
       );
-      toast.error(apiError.message);
+
+      // Handle 401 Unauthorized errors
+      if (error.response.status === 401) {
+        if (typeof window !== "undefined") {
+          // Client-side: redirect using window.location
+          window.location.href = "/login?expired=true";
+        } else {
+          // Server-side: use Next.js redirect, which throws an error
+          redirect("/login?expired=true");
+        }
+        // If we reach here on the client, we've redirected.
+        // If we reach here on the server, `redirect` has already thrown.
+        // In either case, we don't want to throw apiError here.
+        return Promise.reject(error); // Or just return, as the redirect will handle it.
+      }
+
+      // For other errors, display a toast on the client and throw ApiError
+      if (typeof window !== "undefined") {
+        toast.error(apiError.message);
+      }
+
       throw apiError;
     }
     return Promise.reject(error);
