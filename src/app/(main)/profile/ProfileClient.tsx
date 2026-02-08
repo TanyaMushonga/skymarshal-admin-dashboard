@@ -50,7 +50,7 @@ export default function ProfileClient({ initialUser }: ProfileClientProps) {
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const isAdmin = initialUser.role === "admin";
+  const isAdmin = initialUser.role?.toLowerCase() === "admin";
 
   const handleAvatarUpdate = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
