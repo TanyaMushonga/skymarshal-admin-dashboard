@@ -92,16 +92,47 @@ export interface Violation {
 }
 
 export interface Vehicle {
-  id: number | string;
+  id: string; // UUID
   license_plate: string;
   make: string;
   model: string;
   color: string;
   owner_name: string;
   owner_phone_number: string;
-  compliance_points: number;
+  compliance_points?: number;
   expiry_date: string;
   status: "ACTIVE" | "EXPIRED" | "STOLEN" | "SUSPENDED";
+  created_at?: string;
+}
+
+export interface VehicleStatistics {
+  total_detections: number;
+  total_violations: number;
+  total_fines_outstanding: number;
+}
+
+export interface VehicleDetection {
+  id: string;
+  timestamp: string;
+  speed: number;
+  location: [number, number]; // [longitude, latitude]
+  drone_id: string;
+}
+
+export interface VehicleViolation {
+  id: string;
+  type: string;
+  status: string;
+  fine: number;
+  timestamp: string;
+  video_url: string;
+}
+
+export interface VehicleHistory {
+  vehicle: Vehicle;
+  statistics: VehicleStatistics;
+  recent_detections: VehicleDetection[];
+  violations_history: VehicleViolation[];
 }
 
 export interface LotteryEvent {
