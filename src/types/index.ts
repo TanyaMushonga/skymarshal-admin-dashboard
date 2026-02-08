@@ -159,11 +159,19 @@ export interface LotteryEvent {
 
 export interface Notification {
   id: string;
+  recipient: string;
   title: string;
   message: string;
-  notification_type: "violation" | "mission_update" | "system";
+  notification_type:
+    | "stream_health"
+    | "mission_update"
+    | "system_alert"
+    | "general";
   is_read: boolean;
+  read_at: string | null;
+  related_object_id: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardMetrics {
