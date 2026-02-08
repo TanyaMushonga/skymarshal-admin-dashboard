@@ -47,6 +47,14 @@ export default async function DronesPage({ searchParams }: DronesPageProps) {
       initialData.count = response.length;
     }
   } catch (error: any) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      (error as any).digest?.startsWith("NEXT_REDIRECT")
+    ) {
+      throw error;
+    }
     console.error(
       "Failed to fetch drones:",
       error.message,
