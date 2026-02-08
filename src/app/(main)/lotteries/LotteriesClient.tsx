@@ -43,10 +43,8 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingLottery, setEditingLottery] = useState<Lottery | null>(null);
   const [drawingLottery, setDrawingLottery] = useState<number | null>(null);
-  const [confirmDrawDialog, setConfirmDrawDialog] = useState<{
-    isOpen: boolean;
-    lotteryId: number | null;
-  }>({ isOpen: false, lotteryId: null });
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingLotteryId, setPendingLotteryId] = useState<number | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -97,26 +95,20 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
     updateFilters("search", search);
   };
 
-  const handleRunDraw = async () => {
-    const lotteryId = confirmDrawDialog.lotteryId;
-    if (!lotteryId) return;
+  const handleRunDraw = (lotteryId: number) => {
+    setPendingLotteryId(lotteryId);
+    setConfirmDialogOpen(true);
+  };
 
-    // Find the lottery to get its data
-    const lottery = lotteries.find((l) => l.id === lotteryId);
-    if (!lottery) return;
+  const confirmRunDraw = async () => {
+    if (!pendingLotteryId) return;
 
-    setConfirmDrawDialog({ isOpen: false, lotteryId: null });
-    setDrawingLottery(lotteryId);
+    setConfirmDialogOpen(false);
+    setDrawingLottery(pendingLotteryId);
+
     try {
       const result = await api.post<LotteryDrawResult>(
-        `/compliance/lotteries/${lotteryId}/run_draw/`,
-        {
-          name: lottery.name,
-          draw_date: lottery.draw_date,
-          pool_amount: lottery.pool_amount,
-          minimum_points: lottery.minimum_points,
-          warnings: lottery.warnings || "",
-        },
+        `/compliance/lotteries/${pendingLotteryId}/run_draw/`,
       );
       toast.success(
         `Lottery drawn! ${result.winners_count} winners selected from pool of $${result.pool}`,
@@ -128,6 +120,7 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
       toast.error(errorMsg);
     } finally {
       setDrawingLottery(null);
+      setPendingLotteryId(null);
     }
   };
 
@@ -338,12 +331,7 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
                               <Edit size={16} className="text-blue-500" />
                             </button>
                             <button
-                              onClick={() =>
-                                setConfirmDrawDialog({
-                                  isOpen: true,
-                                  lotteryId: lottery.id,
-                                })
-                              }
+                              onClick={() => handleRunDraw(lottery.id)}
                               disabled={
                                 drawingLottery === lottery.id ||
                                 parseFloat(lottery.pool_amount) <= 0
@@ -438,16 +426,20 @@ export default function LotteriesClient({ initialData }: LotteriesClientProps) {
         />
       )}
 
-      {/* Confirm Draw Dialog */}
+      {/* Confirm Dialog */}
       <ConfirmDialog
-        isOpen={confirmDrawDialog.isOpen}
-        onClose={() => setConfirmDrawDialog({ isOpen: false, lotteryId: null })}
-        onConfirm={handleRunDraw}
+        isOpen={confirmDialogOpen}
+        onClose={() => {
+          setConfirmDialogOpen(false);
+          setPendingLotteryId(null);
+        }}
+        onConfirm={confirmRunDraw}
         title="Run Lottery Draw"
-        description="Are you sure you want to run this lottery draw? This action cannot be undone and will automatically select winners and send SMS notifications."
+        description="Are you sure you want to run this lottery draw? This action cannot be undone and winners will be selected immediately."
         confirmText="Run Draw"
+        cancelText="Cancel"
         variant="default"
-        loading={drawingLottery === confirmDrawDialog.lotteryId}
+        loading={drawingLottery !== null}
       />
     </div>
   );
