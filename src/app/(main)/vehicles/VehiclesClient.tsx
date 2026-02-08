@@ -6,6 +6,7 @@ import { Search, Plus, Filter, Loader2, Eye, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 import Sheet from "@/components/ui/Sheet";
 import RegisterVehicleModal from "./components/RegisterVehicleModal";
 
@@ -30,6 +31,10 @@ export default function VehiclesClient({ initialData }: VehiclesClientProps) {
     useState<VehicleHistory | null>(null);
   const [isHistorySheetOpen, setIsHistorySheetOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
+  const debouncedSearch = useDebounce(searchInput, 500);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const fetchData = async () => {
@@ -66,9 +71,24 @@ export default function VehiclesClient({ initialData }: VehiclesClientProps) {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchData();
   }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentSearch = params.get("search") || "";
+
+    if (debouncedSearch !== currentSearch) {
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      router.push(`/vehicles?${params.toString()}`);
+    }
+  }, [debouncedSearch, router, searchParams]);
 
   const handleSuccess = async () => {
     await fetchData();
@@ -144,8 +164,8 @@ export default function VehiclesClient({ initialData }: VehiclesClientProps) {
               type="text"
               placeholder="Search by license plate or owner..."
               className="w-full pl-12 pr-4 py-3 bg-muted/30 border border-border/60 rounded-lg text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
-              value={searchParams.get("search") || ""}
-              onChange={(e) => updateFilters("search", e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
