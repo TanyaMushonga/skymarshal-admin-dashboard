@@ -31,7 +31,6 @@ export const NAV_ITEMS = [
   },
   { label: "Vehicles", icon: <Car size={20} />, path: "/vehicles" },
   { label: "Users", icon: <Users size={20} />, path: "/users" },
-  { label: "Analytics", icon: <BarChart3 size={20} />, path: "/analytics" },
   { label: "Compliance", icon: <Award size={20} />, path: "/compliance" },
   { label: "Notifications", icon: <Bell size={20} />, path: "/notifications" },
 ];
