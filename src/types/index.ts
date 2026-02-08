@@ -80,15 +80,26 @@ export interface Detection {
   };
 }
 
+export interface ViolationEvidenceMeta {
+  speed_detected?: number;
+  speed_limit?: number;
+  location?: string;
+  [key: string]: any;
+}
+
 export interface Violation {
-  id: number | string;
-  plate: string;
+  id: string; // UUID
+  detection: string; // UUID
+  patrol: string; // UUID
   violation_type: string;
-  status: "NEW" | "PROCESSED" | "CITATION_SENT" | "APPEALED";
+  status: "NEW" | "PROCESSED" | "CITATION_SENT" | "DISMISSED";
   fine_amount: string;
   description: string;
+  video_clip: string;
   image_snapshot: string;
+  evidence_meta: ViolationEvidenceMeta;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Vehicle {
