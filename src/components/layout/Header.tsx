@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell, Search, Menu } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import ProfileMenu from "./ProfileMenu";
+import NotificationBell from "../NotificationBell";
 import React from "react";
 
 interface HeaderProps {
@@ -40,10 +41,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-lg transition-all relative">
-          <Bell size={20} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border-2 border-background"></span>
-        </button>
+        <NotificationBell />{" "}
+        {/* Replaced bell button with NotificationBell component */}
         <div className="h-8 w-px bg-border/50 mx-1 hidden sm:block"></div>
         <ProfileMenu />
       </div>
