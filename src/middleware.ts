@@ -12,7 +12,13 @@ export async function middleware(req: NextRequest) {
 
   // 1. If user is logged in and trying to access auth pages, redirect to dashboard
   if (isAuthPage) {
-    if (isAuth) {
+    // Only auto-redirect to dashboard if there are no errors/expiration signals
+    const hasSignal =
+      req.nextUrl.searchParams.has("expired") ||
+      req.nextUrl.searchParams.has("error") ||
+      req.nextUrl.searchParams.has("callbackUrl");
+
+    if (isAuth && !hasSignal) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
     return null;
