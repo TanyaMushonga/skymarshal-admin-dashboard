@@ -175,13 +175,113 @@ export interface Notification {
 }
 
 export interface DashboardMetrics {
-  total_drones: number;
-  active_drones: number;
-  total_patrols_today: number;
-  total_detections_today: number;
-  total_violations_today: number;
-  pending_violations: number;
-  compliance_rate: number;
+  violations_today: number;
+  active_patrols: number;
+  avg_compliance_score: number;
+  system_status: "OPERATIONAL" | "WARNING" | "ERROR";
+}
+
+export interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  category: "ALLOCATION" | "SAFETY" | "MAINTENANCE" | "POLICY";
+  confidence_score: number;
+  is_active: boolean;
+  created_at: string;
+  metadata: Record<string, any>;
+}
+
+export interface DashboardOverview {
+  metrics: DashboardMetrics;
+  recommendations: Recommendation[];
+}
+
+export interface TrafficMetrics {
+  id: number;
+  timestamp: string;
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
+  drone_id: string;
+  vehicle_count: number;
+  car_count: number;
+  truck_count: number;
+  motorcycle_count: number;
+  bus_count: number;
+  average_speed: number;
+  max_speed: number;
+  min_speed: number;
+  speed_variance: number;
+  violation_count: number;
+  citation_count: number;
+  sample_size: number;
+}
+
+export interface HeatMapCell {
+  lat: number;
+  lon: number;
+  value: number;
+}
+
+export interface HeatMap {
+  id: number;
+  date: string;
+  hour: number;
+  metric_type: "speed" | "volume" | "violations";
+  location_grid: {
+    grid_size: number;
+    cells: HeatMapCell[];
+  };
+  min_lat: number;
+  max_lat: number;
+  min_lon: number;
+  max_lon: number;
+  created_at: string;
+}
+
+export interface TrafficPattern {
+  id: number;
+  pattern_type: "peak_hour" | "congestion" | "accident_prone";
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
+  location_name: string;
+  days_of_week: number[];
+  start_hour: number;
+  end_hour: number;
+  avg_vehicle_count: number;
+  avg_speed: number;
+  violation_rate: number;
+  confidence_score: number;
+  sample_size: number;
+  recommendations: string;
+  created_at: string;
+}
+
+export interface AnalyticsReport {
+  id: string;
+  report_type: "daily" | "weekly" | "monthly" | "custom";
+  title: string;
+  start_date: string;
+  end_date: string;
+  report_data: Record<string, any>;
+  summary: string;
+  pdf_file: string;
+  excel_file: string;
+  generated_by: string;
+  is_public: boolean;
+  created_at: string;
+}
+
+export interface OfficerStats {
+  officer: string;
+  hours_patrolled_this_week: number;
+  violations_issued: number;
+  assigned_zone_risk_level: string;
+  performance_rating: number;
 }
 
 export interface PaginatedResponse<T> {
