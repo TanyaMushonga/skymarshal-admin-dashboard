@@ -19,6 +19,7 @@ import {
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface DetectionsClientProps {
   initialDetections: Detection[];
@@ -39,7 +40,10 @@ export default function DetectionsClient({
   const [detections, setDetections] = useState<Detection[]>(initialDetections);
   const [pagination, setPagination] = useState(initialPagination);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
+  const debouncedSearch = useDebounce(searchInput, 500);
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState(
     searchParams.get("vehicle_type") || "",
   );
@@ -86,9 +90,23 @@ export default function DetectionsClient({
     router.push(`/detections?${params.toString()}`);
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentSearch = params.get("search") || "";
+
+    if (debouncedSearch !== currentSearch) {
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      router.push(`/detections?${params.toString()}`);
+    }
+  }, [debouncedSearch, router, searchParams]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    updateFilters("search", search);
   };
 
   const getVehicleIcon = (type: string) => {
@@ -132,7 +150,7 @@ export default function DetectionsClient({
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Eye className="text-primary" size={28} />
-            AI Detections
+            Detections
           </h1>
           <p className="text-base text-muted-foreground mt-1">
             Real-time vehicle detection events from drone surveillance
@@ -154,26 +172,18 @@ export default function DetectionsClient({
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-          <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={18}
-            />
-            <input
-              type="text"
-              placeholder="Search by license plate or track ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-muted/30 border border-border/60 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-primary/10 text-primary rounded-lg font-semibold hover:bg-primary/20 transition-all"
-          >
-            Search
-          </button>
+        <form onSubmit={handleSearch} className="relative flex-1">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            size={18}
+          />
+          <input
+            type="text"
+            placeholder="Search by license plate or track ID..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-muted/30 border border-border/60 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+          />
         </form>
         <select
           value={vehicleTypeFilter}
@@ -383,7 +393,7 @@ export default function DetectionsClient({
             No detections found
           </h3>
           <p className="text-sm text-muted-foreground mt-2">
-            {search || vehicleTypeFilter
+            {searchInput || vehicleTypeFilter
               ? "Try adjusting your search or filters"
               : "Detection events will appear here as drones patrol"}
           </p>
