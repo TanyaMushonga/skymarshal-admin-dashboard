@@ -138,7 +138,7 @@ export default function NotificationsClient({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
+        <div className="text-center sm:text-left">
           <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
           <p className="text-base text-muted-foreground mt-1">
             Stay updated on system alerts, mission changes, and violation
