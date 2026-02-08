@@ -39,7 +39,7 @@ export default function ProfileMenu() {
   const userEmail = user?.email || "operative@skymarshal.agency";
   const firstName = user?.first_name || "";
   const lastName = user?.last_name || "";
-  const role = user?.role || "Operative";
+  const role = session?.user?.role!;
   const fullName =
     firstName && lastName
       ? `${firstName} ${lastName}`.trim()
