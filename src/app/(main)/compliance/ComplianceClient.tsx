@@ -56,11 +56,22 @@ export default function ComplianceClient({
     const lotteryId = confirmDrawDialog.lotteryId;
     if (!lotteryId) return;
 
+    // Find the lottery to get its data
+    const lottery = lotteries.find((l) => l.id === lotteryId);
+    if (!lottery) return;
+
     setConfirmDrawDialog({ isOpen: false, lotteryId: null });
     setDrawingLottery(lotteryId);
     try {
       const result = await api.post<LotteryDrawResult>(
         `/compliance/lotteries/${lotteryId}/run_draw/`,
+        {
+          name: lottery.name,
+          draw_date: lottery.draw_date,
+          pool_amount: lottery.pool_amount,
+          minimum_points: lottery.minimum_points,
+          warnings: lottery.warnings || "",
+        },
       );
       toast.success(
         `Lottery drawn! ${result.winners_count} winners selected from pool of $${result.pool}`,
