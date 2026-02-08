@@ -1,53 +1,103 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Lottery, LotteryDrawResult } from "@/types";
+import React, { useState } from "react";
+import { Lottery, LotteryDrawResult, PaginatedResponse } from "@/types";
 import {
-  Award,
-  Trophy,
-  Users,
   Play,
   Loader2,
   RefreshCw,
-  DollarSign,
-  Calendar,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface ComplianceClientProps {
   initialLotteries: Lottery[];
+  initialPagination?: {
+    count: number;
+    next: string | null;
+    previous: string | null;
+  };
 }
 
 export default function ComplianceClient({
   initialLotteries,
+  initialPagination,
 }: ComplianceClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [lotteries, setLotteries] = useState<Lottery[]>(initialLotteries);
   const [loading, setLoading] = useState(false);
   const [drawingLottery, setDrawingLottery] = useState<number | null>(null);
+  const [deletingLottery, setDeletingLottery] = useState<number | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingLotteryId, setPendingLotteryId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || "",
+  );
+  const [pagination, setPagination] = useState(
+    initialPagination || { count: 0, next: null, previous: null },
+  );
 
-  const fetchLotteries = async () => {
+  const currentPage = parseInt(searchParams.get("page") || "1");
+
+  const fetchLotteries = async (search?: string, page?: number) => {
     setLoading(true);
     try {
-      const response = await api.get<any>(
-        "/compliance/lotteries/?ordering=-draw_date&page_size=10",
+      const params = new URLSearchParams();
+      params.set("ordering", "-draw_date");
+      if (search) params.set("search", search);
+      if (page) params.set("page", page.toString());
+
+      const response = await api.get<PaginatedResponse<Lottery>>(
+        `/compliance/lotteries/?${params.toString()}`,
       );
 
       if (Array.isArray(response)) {
         setLotteries(response);
+        setPagination({ count: response.length, next: null, previous: null });
       } else if (response && "results" in response) {
         setLotteries(response.results || []);
+        setPagination({
+          count: response.count || 0,
+          next: response.next,
+          previous: response.previous,
+        });
       }
     } catch (error) {
       toast.error("Failed to fetch lotteries");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    } else {
+      params.delete("search");
+    }
+    params.set("page", "1");
+    router.push(`/compliance?${params.toString()}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    router.push(`/compliance?${params.toString()}`);
+  };
+
+  const handleRefresh = () => {
+    fetchLotteries(searchQuery, currentPage);
+    router.refresh();
   };
 
   const handleRunDraw = (lotteryId: number) => {
@@ -65,10 +115,8 @@ export default function ComplianceClient({
       const result = await api.post<LotteryDrawResult>(
         `/compliance/lotteries/${pendingLotteryId}/run_draw/`,
       );
-      toast.success(
-        `Lottery drawn! ${result.winners_count} winners selected from pool of $${result.pool}`,
-      );
-      await fetchLotteries();
+      toast.success(`Lottery drawn! ${result.winners_count} winners selected`);
+      await fetchLotteries(searchQuery, currentPage);
       router.refresh();
     } catch (error: any) {
       const errorMsg =
@@ -80,258 +128,276 @@ export default function ComplianceClient({
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "OPEN":
-        return "bg-primary/10 text-primary border-primary/20";
-      case "DRAWN":
-        return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-      case "PAID":
-        return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
-      default:
-        return "bg-muted/30 text-muted-foreground border-border/60";
+  const handleDelete = (lotteryId: number) => {
+    setPendingLotteryId(lotteryId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingLotteryId) return;
+
+    setDeleteDialogOpen(false);
+    setDeletingLottery(pendingLotteryId);
+
+    try {
+      await api.delete(`/compliance/lotteries/${pendingLotteryId}/`);
+      toast.success("Lottery deleted successfully");
+      await fetchLotteries(searchQuery, currentPage);
+      router.refresh();
+    } catch (error: any) {
+      const errorMsg =
+        error?.response?.data?.error || "Failed to delete lottery";
+      toast.error(errorMsg);
+    } finally {
+      setDeletingLottery(null);
+      setPendingLotteryId(null);
     }
   };
 
-  // Count active participants (vehicles with points in OPEN lotteries)
-  const activeParticipants = lotteries.filter(
-    (l) => l.status === "OPEN",
-  ).length;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "OPEN":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            Open
+          </span>
+        );
+      case "DRAWN":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+            Drawn
+          </span>
+        );
+      case "PAID":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+            Paid
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted/30 text-muted-foreground border border-border/60">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return "$0.00";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(numAmount);
+  };
+
+  const totalPages = Math.ceil(pagination.count / 10);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Trophy className="text-primary" size={28} />
+          <h1 className="text-3xl font-bold text-foreground">
             Compliance Program
           </h1>
-          <p className="text-base text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1">
             Incentivizing safe driving through rewards and compliance points.
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={fetchLotteries}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-muted/30 border border-border/60 rounded-lg text-sm font-semibold hover:bg-muted/50 transition-all disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <RefreshCw size={16} />
-            )}
-            Refresh
-          </button>
-        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card/40 backdrop-blur-md rounded-xl p-5 border border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10 rounded-xl">
-              <Users className="text-primary" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Active Lotteries
-              </p>
-              <p className="text-2xl font-bold text-foreground">
-                {lotteries.filter((l) => l.status === "OPEN").length}
-              </p>
-            </div>
-          </div>
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search lotteries..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          />
         </div>
-        <div className="bg-card/40 backdrop-blur-md rounded-xl p-5 border border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/10 rounded-xl">
-              <DollarSign className="text-emerald-500" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Total Prize Pool
-              </p>
-              <p className="text-2xl font-bold text-foreground">
-                $
-                {lotteries
-                  .filter((l) => l.status === "OPEN")
-                  .reduce((sum, l) => sum + parseFloat(l.pool_amount), 0)
-                  .toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card/40 backdrop-blur-md rounded-xl p-5 border border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-500/10 rounded-xl">
-              <Award className="text-amber-500" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Completed Draws
-              </p>
-              <p className="text-2xl font-bold text-foreground">
-                {lotteries.filter((l) => l.status !== "OPEN").length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          Search
+        </button>
+      </form>
 
-      {/* Lotteries */}
-      <div className="bg-card/40 backdrop-blur-md rounded-xl p-6 border border-border/50">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Trophy size={20} className="text-primary" />
-            Lottery Events
-          </h3>
-          <button
-            onClick={() => router.push("/lotteries")}
-            className="text-sm font-semibold text-primary hover:underline"
-          >
-            Manage All
-          </button>
-        </div>
-
-        {loading && lotteries.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin text-primary" size={40} />
-          </div>
-        ) : lotteries.length > 0 ? (
-          <div className="space-y-4">
-            {lotteries.slice(0, 5).map((lottery) => (
-              <div
-                key={lottery.id}
-                className="bg-muted/20 rounded-xl p-4 border border-border/50 hover:border-primary/30 transition-all"
-              >
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="text-base font-bold text-foreground">
+      {/* Table */}
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-muted/50 border-b border-border">
+              <tr>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  Lottery Name
+                </th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  Draw Date
+                </th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  Prize Pool
+                </th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  Min Points
+                </th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  Status
+                </th>
+                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Loading lotteries...
+                    </p>
+                  </td>
+                </tr>
+              ) : lotteries.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <p className="text-muted-foreground">No lotteries found</p>
+                  </td>
+                </tr>
+              ) : (
+                lotteries.map((lottery) => (
+                  <tr
+                    key={lottery.id}
+                    className="hover:bg-muted/20 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-foreground">
                         {lottery.name}
-                      </h4>
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-bold border ${getStatusBadge(
-                          lottery.status,
-                        )}`}
-                      >
-                        {lottery.status}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-foreground">
+                      {formatDate(lottery.draw_date)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-semibold text-emerald-500">
+                        {formatCurrency(lottery.pool_amount)}
                       </span>
-                    </div>
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        {new Date(lottery.draw_date).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1 text-emerald-500 font-semibold">
-                        <DollarSign size={14} />
-                        {parseFloat(lottery.pool_amount).toLocaleString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Award size={14} />
-                        Min: {lottery.minimum_points} pts
-                      </div>
-                    </div>
-                    {lottery.winners.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          Winners:
-                        </span>
-                        {lottery.winners.slice(0, 3).map((winner, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium"
+                    </td>
+                    <td className="px-6 py-4 text-sm text-foreground">
+                      {lottery.minimum_points} pts
+                    </td>
+                    <td className="px-6 py-4">
+                      {getStatusBadge(lottery.status)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {lottery.status === "OPEN" && (
+                          <button
+                            onClick={() => handleRunDraw(lottery.id)}
+                            disabled={drawingLottery === lottery.id}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                           >
-                            {winner}
-                          </span>
-                        ))}
-                        {lottery.winners.length > 3 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{lottery.winners.length - 3} more
-                          </span>
+                            {drawingLottery === lottery.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Drawing...
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-4 h-4" />
+                                Run Draw
+                              </>
+                            )}
+                          </button>
                         )}
+                        <button
+                          onClick={() => handleDelete(lottery.id)}
+                          disabled={deletingLottery === lottery.id}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm border border-destructive/20"
+                          title="Delete lottery"
+                        >
+                          {deletingLottery === lottery.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {lottery.status === "OPEN" && (
-                      <button
-                        onClick={() => handleRunDraw(lottery.id)}
-                        disabled={
-                          drawingLottery === lottery.id ||
-                          parseFloat(lottery.pool_amount) <= 0
-                        }
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={
-                          parseFloat(lottery.pool_amount) <= 0
-                            ? "Pool amount must be > 0"
-                            : "Run Draw"
-                        }
-                      >
-                        {drawingLottery === lottery.id ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          <Play size={16} />
-                        )}
-                        Run Draw
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Trophy
-              size={48}
-              className="mx-auto text-muted-foreground/30 mb-4"
-            />
-            <h3 className="text-lg font-bold text-foreground">
-              No lotteries available
-            </h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              Create a new lottery to get started
-            </p>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-card border border-border rounded-lg px-6 py-4">
+          <p className="text-sm text-muted-foreground">
+            Showing page {currentPage} of {totalPages} ({pagination.count} total
+            lotteries)
+          </p>
+          <div className="flex gap-2">
             <button
-              onClick={() => router.push("/lotteries")}
-              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={!pagination.previous || loading}
+              className="flex items-center gap-1 px-3 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Go to Lottery Management
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={!pagination.next || loading}
+              className="flex items-center gap-1 px-3 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Info Box */}
-      <div className="bg-primary/5 border border-primary/20 rounded-xl p-5">
-        <h4 className="text-sm font-bold text-primary mb-2 flex items-center gap-2">
-          <Award size={16} />
-          How It Works
-        </h4>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Compliance points are automatically awarded when vehicles are detected
-          driving at or below the speed limit. Drivers with sufficient points
-          qualify for monthly lottery draws funded by traffic penalties.
-        </p>
-      </div>
-
-      {/* Confirm Dialog */}
+      {/* Confirm Dialogs */}
       <ConfirmDialog
         isOpen={confirmDialogOpen}
-        onClose={() => {
-          setConfirmDialogOpen(false);
-          setPendingLotteryId(null);
-        }}
+        onClose={() => setConfirmDialogOpen(false)}
         onConfirm={confirmRunDraw}
         title="Run Lottery Draw"
-        description="Are you sure you want to run this lottery draw? This action cannot be undone and winners will be selected immediately."
-        confirmText="Run Draw"
-        cancelText="Cancel"
-        variant="default"
-        loading={drawingLottery !== null}
+        description="Are you sure you want to run this lottery draw? This action cannot be undone."
+      />
+
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Lottery"
+        description="Are you sure you want to delete this lottery? This action cannot be undone and all associated data will be permanently removed."
+        variant="destructive"
       />
     </div>
   );
