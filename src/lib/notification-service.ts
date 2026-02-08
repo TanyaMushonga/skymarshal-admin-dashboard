@@ -21,7 +21,8 @@ class NotificationService {
       return "";
     }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = process.env.NEXT_PUBLIC_WS_URL || window.location.host;
+    // Always use port 8000 for backend server
+    const host = process.env.NEXT_PUBLIC_WS_URL || "localhost:8000";
     return `${protocol}//${host}/ws/notifications/`;
   }
 
@@ -92,12 +93,25 @@ class NotificationService {
       };
 
       this.ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        // Log error but don't show toast - connection failures are handled in onclose
+        console.warn(
+          "WebSocket connection error (will attempt reconnect):",
+          error,
+        );
       };
 
       this.ws.onclose = (event) => {
         console.log("WebSocket closed:", event.code, event.reason);
         this.authenticated = false;
+
+        // Only show error if it's not a normal closure and we've exhausted reconnect attempts
+        if (
+          event.code !== 1000 &&
+          this.reconnectAttempts >= this.maxReconnectAttempts
+        ) {
+          console.error("WebSocket connection failed permanently");
+        }
+
         this.attemptReconnect();
       };
     } catch (error) {
@@ -158,8 +172,10 @@ class NotificationService {
         this.connect();
       }, delay);
     } else {
-      console.error("Max reconnection attempts reached");
-      toast.error("Connection lost. Please refresh the page.");
+      console.warn(
+        "Max WebSocket reconnection attempts reached. Real-time notifications disabled.",
+      );
+      // Don't show toast error - just log it. User can still use the app without real-time updates
     }
   }
 
