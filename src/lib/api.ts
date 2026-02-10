@@ -50,9 +50,6 @@ export class ApiError extends Error {
  */
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 apiClient.interceptors.request.use(
@@ -69,7 +66,9 @@ apiClient.interceptors.request.use(
 
     // Automatically handle FormData content-type
     if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
+      if (config.headers) {
+        delete config.headers["Content-Type"];
+      }
     }
 
     return config;

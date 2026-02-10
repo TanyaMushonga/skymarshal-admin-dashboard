@@ -11,9 +11,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL!;
  */
 const serverApiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 serverApiClient.interceptors.request.use(
@@ -30,7 +27,9 @@ serverApiClient.interceptors.request.use(
 
     // Automatically handle FormData (Multipart) for server-side uploads
     if (config.data instanceof FormData) {
-      delete config.headers["Content-Type"];
+      if (config.headers) {
+        delete config.headers["Content-Type"];
+      }
     }
 
     return config;

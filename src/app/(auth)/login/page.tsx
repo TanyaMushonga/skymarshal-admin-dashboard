@@ -38,7 +38,11 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid credentials. Access denied.");
+        if (result.error === "2FA_REQUIRED") {
+          router.push(`/verify-2fa?email=${encodeURIComponent(data.email)}`);
+        } else {
+          setError("Invalid credentials. Access denied.");
+        }
       } else {
         router.push("/dashboard");
       }

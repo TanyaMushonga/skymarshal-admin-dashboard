@@ -7,15 +7,16 @@ export const dynamic = "force-dynamic";
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: { page?: string; search?: string };
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
+  const params_data = await searchParams;
   let users: User[] = [];
   let pagination = { count: 0, next: null, previous: null };
 
   try {
     const params = new URLSearchParams();
-    if (searchParams.page) params.set("page", searchParams.page);
-    if (searchParams.search) params.set("search", searchParams.search);
+    if (params_data.page) params.set("page", params_data.page);
+    if (params_data.search) params.set("search", params_data.search);
 
     const response = await server.get<any>(`/users/?${params.toString()}`);
 

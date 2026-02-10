@@ -71,11 +71,7 @@ export default function ProfileClient({ initialUser }: ProfileClientProps) {
         const formData = new FormData();
         formData.append("profile_picture", file);
 
-        const response = await api.patch<User>("/users/me/", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        const response = await api.patch<User>("/users/me/", formData);
         setUser(response);
         toast.success("Profile picture updated");
 

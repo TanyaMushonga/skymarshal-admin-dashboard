@@ -44,36 +44,52 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        code: { label: "Verification Code", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email) return null;
 
         try {
-          console.log("Attempting login for:", credentials.email);
+          const isVerification = !!credentials.code;
+          const endpoint = isVerification
+            ? "/auth/login/verify/"
+            : "/auth/login/admin/";
+
+          const payload = isVerification
+            ? { email: credentials.email, code: credentials.code }
+            : { email: credentials.email, password: credentials.password };
+
+          console.log(
+            `Attempting ${isVerification ? "2FA Verification" : "Login"} for:`,
+            credentials.email,
+          );
           const response = await axios.post(
-            `${API_BASE_URL}/auth/login/admin/`,
-            {
-              email: credentials.email,
-              password: credentials.password,
-            },
+            `${API_BASE_URL}${endpoint}`,
+            payload,
           );
 
           const user = response.data;
-          console.log("Login Response Data Keys:", Object.keys(user));
-          if (user.refresh) console.log("Refresh token present in response");
-          else console.log("Refresh token MISSING in response");
+          if (user["2fa_required"]) {
+            console.log("2FA required for user:", credentials.email);
+            throw new Error("2FA_REQUIRED");
+          }
 
-          if (user) {
+          if (user && user.access) {
             console.log("Authorize returning user object with tokens");
             return {
-              ...user.user,
+              ...(user.user || {}),
+              id: user.user?.id || user.email || credentials.email,
+              email: user.email || credentials.email,
               accessToken: user.access,
               refreshToken: user.refresh,
             };
           }
           return null;
-        } catch (error) {
+        } catch (error: any) {
           console.error("Login Authorization Error:", error);
+          if (error.message === "2FA_REQUIRED") {
+            throw error;
+          }
           return null;
         }
       },

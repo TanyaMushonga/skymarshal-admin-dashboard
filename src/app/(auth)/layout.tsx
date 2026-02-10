@@ -4,6 +4,9 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Shield, Radio, Activity, Lock, Globe } from "lucide-react";
 
+import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+
 const slides = [
   {
     title: "Real-time Threat Neutralization",
@@ -27,7 +30,23 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isExpired = searchParams.get("expired") === "true";
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    // Only redirect if authenticated, no error, has token, and NOT redirected due to expiry
+    if (
+      status === "authenticated" &&
+      !session?.error &&
+      session?.accessToken &&
+      !isExpired
+    ) {
+      router.replace("/dashboard");
+    }
+  }, [status, session, router, isExpired]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,6 +54,20 @@ export default function AuthLayout({
     }, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  if (
+    status === "loading" ||
+    (status === "authenticated" &&
+      !session?.error &&
+      session?.accessToken &&
+      !isExpired)
+  ) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Activity className="animate-spin text-primary" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-background text-foreground selection:bg-primary/30">

@@ -5,10 +5,11 @@ import { Detection, PaginatedResponse } from "@/types";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function DetectionsPage({ searchParams }: PageProps) {
+  const params_data = await searchParams;
   let detections: Detection[] = [];
   let pagination = { count: 0, next: null, previous: null };
 
@@ -16,29 +17,29 @@ export default async function DetectionsPage({ searchParams }: PageProps) {
     const params = new URLSearchParams();
 
     // Add filters from search params
-    if (searchParams.vehicle_type) {
-      params.set("vehicle_type", String(searchParams.vehicle_type));
+    if (params_data.vehicle_type) {
+      params.set("vehicle_type", String(params_data.vehicle_type));
     }
-    if (searchParams.drone__drone_id) {
-      params.set("drone__drone_id", String(searchParams.drone__drone_id));
+    if (params_data.drone__drone_id) {
+      params.set("drone__drone_id", String(params_data.drone__drone_id));
     }
-    if (searchParams.patrol) {
-      params.set("patrol", String(searchParams.patrol));
+    if (params_data.patrol) {
+      params.set("patrol", String(params_data.patrol));
     }
-    if (searchParams.track_id) {
-      params.set("track_id", String(searchParams.track_id));
+    if (params_data.track_id) {
+      params.set("track_id", String(params_data.track_id));
     }
-    if (searchParams.search) {
-      params.set("search", String(searchParams.search));
+    if (params_data.search) {
+      params.set("search", String(params_data.search));
     }
-    if (searchParams.ordering) {
-      params.set("ordering", String(searchParams.ordering));
+    if (params_data.ordering) {
+      params.set("ordering", String(params_data.ordering));
     }
-    if (searchParams.page) {
-      params.set("page", String(searchParams.page));
+    if (params_data.page) {
+      params.set("page", String(params_data.page));
     }
-    if (searchParams.page_size) {
-      params.set("page_size", String(searchParams.page_size));
+    if (params_data.page_size) {
+      params.set("page_size", String(params_data.page_size));
     }
 
     const response = await server.get<any>(
