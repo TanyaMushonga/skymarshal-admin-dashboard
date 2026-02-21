@@ -39,7 +39,7 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-white font-bold text-sm tracking-widest uppercase">
+          <span className="text-white font-bold text-base tracking-widest uppercase">
             Live • {droneName}
           </span>
         </div>
@@ -86,9 +86,9 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
 
         {/* Overlay Detections Badge (Simulated logic indicator) */}
         {frame && (
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
-            <Activity size={14} className="text-emerald-400" />
-            <span className="text-[10px] font-bold text-white uppercase tracking-tighter">
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
+            <Activity size={16} className="text-emerald-400" />
+            <span className="text-xs font-bold text-white uppercase tracking-tighter">
               AI Processing Enabled
             </span>
           </div>
@@ -101,10 +101,10 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
 
         <div className="flex items-center gap-3">
           <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isConnected ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${isConnected ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
           >
             <div
-              className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-400"}`}
+              className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400" : "bg-red-400"}`}
             />
             {isConnected ? "Connection: Stable" : "Disconnected"}
           </div>
