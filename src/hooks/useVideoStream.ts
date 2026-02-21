@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getSession } from "next-auth/react";
 
 export interface StreamFrame {
   frame_data: string;
@@ -14,8 +15,14 @@ export const useVideoStream = (streamId: string | null) => {
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (!streamId) return;
+
+    const session = await getSession();
+    if (!session?.accessToken) {
+      console.error("No token available for stream authentication");
+      return;
+    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 
@@ -38,16 +45,27 @@ export const useVideoStream = (streamId: string | null) => {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      setIsConnected(true);
-      setError(null);
-      console.log("Stream WebSocket connected");
+      console.log("Stream WebSocket connected, authenticating...");
+      ws.send(
+        JSON.stringify({
+          type: "authenticate",
+          token: session.accessToken,
+        }),
+      );
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "live_frame") {
+        if (data.type === "auth_success") {
+          console.log("Stream authentication successful");
+          setIsConnected(true);
+          setError(null);
+        } else if (data.type === "live_frame") {
           setFrame(data.frame_data);
+        } else if (data.error) {
+          console.error("Stream socket error:", data.error);
+          setError(data.error);
         }
       } catch (err) {
         console.error("Error parsing stream message:", err);
