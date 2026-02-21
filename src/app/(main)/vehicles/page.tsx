@@ -11,7 +11,7 @@ export default async function VehiclesPage() {
   };
 
   try {
-    const data = await server.get<any>("/vehicle-lookup/");
+    const data = await server.get<any>("/vehicles/");
     if (Array.isArray(data)) {
       initialData = {
         count: data.length,
