@@ -1,4 +1,5 @@
-import { mockApi } from "@/lib/mockApi";
+import { server } from "@/lib/server-api";
+import { Violation } from "@/types";
 import { notFound } from "next/navigation";
 import {
   AlertCircle,
@@ -17,8 +18,12 @@ export default async function ViolationDetailPage({
 }: {
   params: { id: string };
 }) {
-  const violations = await mockApi.getViolations();
-  const violation = violations.find((v) => v.id === params.id);
+  let violation: Violation | null = null;
+  try {
+    violation = await server.get<Violation>(`/violations/${params.id}/`);
+  } catch (error) {
+    console.error("Failed to fetch violation:", error);
+  }
 
   if (!violation) {
     notFound();
@@ -47,7 +52,7 @@ export default async function ViolationDetailPage({
                 {violation.violation_type}
               </span>
               <h1 className="text-3xl font-bold text-white tracking-widest">
-                {violation.plate}
+                Violation Details
               </h1>
               <p className="text-slate-300 mt-1 flex items-center gap-2">
                 <AlertCircle size={14} className="text-amber-500" />
