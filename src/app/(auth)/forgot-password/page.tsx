@@ -1,10 +1,18 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
-import { Mail, ArrowRight, ShieldAlert, CheckCircle2 } from "lucide-react";
+import {
+  Mail,
+  ArrowRight,
+  ShieldAlert,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordContent() {
   const [submitted, setSubmitted] = useState(false);
 
   if (submitted) {
@@ -100,5 +108,19 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center min-h-[400px]">
+          <Loader2 className="animate-spin text-primary" size={32} />
+        </div>
+      }
+    >
+      <ForgotPasswordContent />
+    </Suspense>
   );
 }
