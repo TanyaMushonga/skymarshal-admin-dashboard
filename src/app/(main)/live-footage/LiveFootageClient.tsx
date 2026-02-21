@@ -67,8 +67,17 @@ export default function LiveFootageClient({
   };
 
   useEffect(() => {
+    fetchStreams();
+    const interval = setInterval(fetchStreams, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const streamId = searchParams.get("streamId");
     const droneId = searchParams.get("droneId");
+
+    console.log("Streams available:", streams.length);
+    console.log("Selected Stream ID:", selectedStreamId);
 
     if (streamId && streamId !== selectedStreamId) {
       setSelectedStreamId(streamId);
