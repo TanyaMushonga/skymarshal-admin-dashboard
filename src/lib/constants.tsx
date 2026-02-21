@@ -10,6 +10,7 @@ import {
   BarChart3,
   Award,
   Bell,
+  Video,
 } from "lucide-react";
 
 export const API_BASE_URL = "http://localhost:8000/api/v1/";
@@ -19,6 +20,11 @@ export const NAV_ITEMS = [
     label: "Dashboard",
     icon: <LayoutDashboard size={20} />,
     path: "/dashboard",
+  },
+  {
+    label: "Live Footage",
+    icon: <Video size={20} />,
+    path: "/live-footage",
   },
   { label: "Drone Fleet", icon: <Plane size={20} />, path: "/drones" },
   { label: "Live Map", icon: <MapIcon size={20} />, path: "/map" },
