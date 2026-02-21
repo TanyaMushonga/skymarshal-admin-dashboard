@@ -108,6 +108,27 @@ export interface Patrol {
   created_at: string;
 }
 
+export interface VideoStream {
+  id: number | string;
+  stream_id: string;
+  drone: number | string;
+  drone_id: string;
+  drone_name: string;
+  rtsp_url: string;
+  is_active: boolean;
+  frame_rate: number;
+  resolution: string;
+  is_streaming: boolean;
+  active_session_id: string | null;
+  active_patrol: {
+    id: number | string;
+    status: string;
+    officer_name: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Detection {
   id: number;
   drone: number;
