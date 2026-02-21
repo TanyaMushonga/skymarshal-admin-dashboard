@@ -121,13 +121,13 @@ export default function LiveFootageClient({
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span
-                      className={`text-xs font-bold ${selectedStreamId === stream.stream_id ? "text-primary" : "text-foreground"}`}
+                      className={`text-sm font-bold ${selectedStreamId === stream.stream_id ? "text-primary" : "text-foreground"}`}
                     >
                       {stream.active_patrol?.officer_name}
                     </span>
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Plane size={10} />
                     <span>
                       {stream.drone_name} ({stream.drone_id})
@@ -154,12 +154,12 @@ export default function LiveFootageClient({
                 <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl p-4 shadow-xl">
                   <div className="flex items-center justify-between mb-4 px-2">
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 text-[10px] font-bold uppercase tracking-wider">
-                        <Activity size={12} />
+                      <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 text-xs font-bold uppercase tracking-wider">
+                        <Activity size={14} />
                         Active Patrol
                       </div>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-                        <User size={14} className="text-muted-foreground" />
+                      <div className="flex items-center gap-2 text-base font-semibold text-foreground/80">
+                        <User size={18} className="text-muted-foreground" />
                         {selectedStream.active_patrol.officer_name}
                       </div>
                     </div>
