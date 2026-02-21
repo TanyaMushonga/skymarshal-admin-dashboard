@@ -16,6 +16,7 @@ import {
   Clock,
   User,
   Zap,
+  Wifi,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -352,6 +353,18 @@ export default function PatrolsClient({
 
                     {actionMenuOpen === patrol.id && (
                       <div className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50 bg-card border border-border rounded-lg shadow-xl py-1 min-w-[120px] animate-in fade-in zoom-in duration-100">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(
+                              `/live-footage?droneId=${patrol.drone_id}`,
+                            );
+                            setActionMenuOpen(null);
+                          }}
+                          className={`${patrol.status === "ACTIVE" ? "flex" : "hidden"} w-full px-4 py-2 text-xs font-semibold text-left text-emerald-500 hover:bg-emerald-500/10 items-center gap-2`}
+                        >
+                          <Wifi size={14} /> View Live Feed
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
