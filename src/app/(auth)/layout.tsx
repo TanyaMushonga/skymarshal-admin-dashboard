@@ -6,6 +6,7 @@ import { Shield, Radio, Activity, Lock, Globe } from "lucide-react";
 
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const slides = [
   {
@@ -25,19 +26,13 @@ const slides = [
   },
 ];
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AuthRedirectCheck() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("expired") === "true";
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
-    // Only redirect if authenticated, no error, has token, and NOT redirected due to expiry
     if (
       status === "authenticated" &&
       !session?.error &&
@@ -48,6 +43,20 @@ export default function AuthLayout({
     }
   }, [status, session, router, isExpired]);
 
+  return null;
+}
+
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Redirect logic is now handled by the suspended AuthRedirectCheck component
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -57,10 +66,7 @@ export default function AuthLayout({
 
   if (
     status === "loading" ||
-    (status === "authenticated" &&
-      !session?.error &&
-      session?.accessToken &&
-      !isExpired)
+    (status === "authenticated" && !session?.error && session?.accessToken)
   ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -77,6 +83,9 @@ export default function AuthLayout({
           {/* Children (Page Content) */}
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             {children}
+            <Suspense fallback={null}>
+              <AuthRedirectCheck />
+            </Suspense>
           </div>
 
           {/* Footer Info */}
