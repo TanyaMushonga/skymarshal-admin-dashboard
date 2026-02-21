@@ -41,9 +41,7 @@ export default function VehiclesClient({ initialData }: VehiclesClientProps) {
     setLoading(true);
     try {
       const params = new URLSearchParams(searchParams.toString());
-      const response = await api.get<any>(
-        `/vehicle-lookup/?${params.toString()}`,
-      );
+      const response = await api.get<any>(`/vehicles/?${params.toString()}`);
 
       if (Array.isArray(response)) {
         setVehicles(response);
@@ -107,7 +105,7 @@ export default function VehiclesClient({ initialData }: VehiclesClientProps) {
     setHistoryLoading(true);
     try {
       const history = await api.get<VehicleHistory>(
-        `/vehicle-lookup/${uuid}/history/`,
+        `/vehicles/${uuid}/history/`,
       );
       setSelectedVehicleHistory(history);
       setIsHistorySheetOpen(true);
