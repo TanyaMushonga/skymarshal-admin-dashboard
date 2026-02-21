@@ -1,4 +1,5 @@
-import { mockApi } from "@/lib/mockApi";
+import { server } from "@/lib/server-api";
+import { Drone } from "@/types";
 import { notFound } from "next/navigation";
 import {
   Plane,
@@ -17,8 +18,12 @@ export default async function DroneDetailPage({
 }: {
   params: { id: string };
 }) {
-  const drones = await mockApi.getDrones();
-  const drone = drones.find((d) => d.id === parseInt(params.id));
+  let drone: Drone | null = null;
+  try {
+    drone = await server.get<Drone>(`/drones/${params.id}/`);
+  } catch (error) {
+    console.error("Failed to fetch drone:", error);
+  }
 
   if (!drone) {
     notFound();
