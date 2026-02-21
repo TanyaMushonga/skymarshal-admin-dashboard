@@ -337,7 +337,9 @@ export default function DetectionsClient({
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {detection.location ? (
+                      {detection.location &&
+                      detection.location.coordinates &&
+                      detection.location.coordinates.length >= 2 ? (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
                           <MapPin size={12} className="text-primary" />
                           {detection.location.coordinates[1].toFixed(4)},
