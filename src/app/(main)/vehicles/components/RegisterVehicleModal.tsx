@@ -33,7 +33,7 @@ export default function RegisterVehicleModal({
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post("/vehicle-lookup/", formData);
+      await api.post("/vehicles/", formData);
       toast.success("Vehicle registered successfully");
       onSuccess();
       onClose();
