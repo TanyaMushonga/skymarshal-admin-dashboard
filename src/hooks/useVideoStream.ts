@@ -63,6 +63,8 @@ export const useVideoStream = (streamId: string | null) => {
           setError(null);
         } else if (data.type === "live_frame") {
           setFrame(data.frame_data);
+          // Fallback: if we are receiving frames, we are connected
+          if (!isConnected) setIsConnected(true);
         } else if (data.error) {
           console.error("Stream socket error:", data.error);
           setError(data.error);
