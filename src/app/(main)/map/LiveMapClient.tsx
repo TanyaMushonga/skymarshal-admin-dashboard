@@ -133,25 +133,39 @@ export default function LiveMapClient() {
       // 1. Flight Paths (if available)
       if (
         patrol.patrol_config?.flight_path &&
-        patrol.patrol_config.flight_path.length > 0
+        Array.isArray(patrol.patrol_config.flight_path)
       ) {
-        const polyline = L.polyline(
-          patrol.patrol_config.flight_path.map((coord: any) => [
-            coord[1],
-            coord[0],
-          ]),
-          {
+        const validCoords = patrol.patrol_config.flight_path
+          .filter(
+            (coord: any) =>
+              Array.isArray(coord) &&
+              coord.length >= 2 &&
+              typeof coord[0] === "number" &&
+              typeof coord[1] === "number" &&
+              !isNaN(coord[0]) &&
+              !isNaN(coord[1]),
+          )
+          .map((coord: any) => [coord[1], coord[0]]);
+
+        if (validCoords.length > 0) {
+          const polyline = L.polyline(validCoords, {
             color: "#3b82f6",
             weight: 3,
             opacity: 0.4,
             dashArray: "10, 10",
-          },
-        ).addTo(mapRef.current);
-        pathsRef.current.push(polyline);
+          }).addTo(mapRef.current);
+          pathsRef.current.push(polyline);
+        }
       }
 
       // 2. Drone Markers
-      if (patrol.latest_location) {
+      if (
+        patrol.latest_location &&
+        typeof patrol.latest_location.latitude === "number" &&
+        typeof patrol.latest_location.longitude === "number" &&
+        !isNaN(patrol.latest_location.latitude) &&
+        !isNaN(patrol.latest_location.longitude)
+      ) {
         const { latitude, longitude, altitude } = patrol.latest_location;
         const isOnline = patrol.status_display === "online";
         const battery = patrol.battery_level || 0;
@@ -258,7 +272,13 @@ export default function LiveMapClient() {
     setDetailPatrol(patrol);
     setIsDetailSheetOpen(true);
 
-    if (patrol.latest_location) {
+    if (
+      patrol.latest_location &&
+      typeof patrol.latest_location.latitude === "number" &&
+      typeof patrol.latest_location.longitude === "number" &&
+      !isNaN(patrol.latest_location.latitude) &&
+      !isNaN(patrol.latest_location.longitude)
+    ) {
       mapRef.current?.setView(
         [patrol.latest_location.latitude, patrol.latest_location.longitude],
         16,
