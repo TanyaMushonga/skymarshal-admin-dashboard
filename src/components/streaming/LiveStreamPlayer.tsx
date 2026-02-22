@@ -74,11 +74,65 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
               <>
                 <AlertCircle size={48} className="text-destructive/50" />
                 <p className="text-sm font-medium text-destructive">{error}</p>
+                <button
+                  onClick={() => {
+                    const api = require("@/lib/api").default;
+                    api
+                      .post(`/streams/${streamId}/simulate/`, {
+                        video_file: "computer_vision/traffic_sample.mp4",
+                      })
+                      .then(() => {
+                        window.location.reload();
+                      })
+                      .catch((err: any) => {
+                        // If already active, just reload to attempt connection
+                        if (
+                          err.response?.data?.error?.includes("already active")
+                        ) {
+                          window.location.reload();
+                        } else {
+                          console.error(err);
+                        }
+                      });
+                  }}
+                  className="mt-2 px-4 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-colors"
+                >
+                  Start Simulation Fallback
+                </button>
               </>
             ) : (
               <>
                 <WifiOff size={48} className="text-muted-foreground/30" />
                 <p className="text-sm font-medium">Stream Offline</p>
+                <div className="flex flex-col items-center gap-2 mt-4">
+                  <p className="text-xs text-muted-foreground max-w-[200px] text-center">
+                    No active feed detected. You can start a simulation using
+                    the sample data.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { default: api } = await import("@/lib/api");
+                        await api.post(`/streams/${streamId}/simulate/`, {
+                          video_file: "computer_vision/traffic_sample.mp4",
+                        });
+                        // The stream status should update, we can attempt to reconnect or just reload
+                        setTimeout(() => window.location.reload(), 1000);
+                      } catch (err: any) {
+                        if (
+                          err.response?.data?.error?.includes("already active")
+                        ) {
+                          window.location.reload();
+                        } else {
+                          console.error("Failed to start simulation:", err);
+                        }
+                      }
+                    }}
+                    className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+                  >
+                    Load Sample Video
+                  </button>
+                </div>
               </>
             )}
           </div>
