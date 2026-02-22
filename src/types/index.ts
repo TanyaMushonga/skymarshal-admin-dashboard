@@ -86,8 +86,10 @@ export interface Patrol {
   id: number | string;
   drone: number | string; // Database ID of the drone
   drone_id: string; // Unique Identifier (e.g., "DRONE-001")
+  drone_id_str?: string; // Some backends use this field name
   officer: number | string; // Database ID of the assigned officer
   officer_name: string; // Email or name of the officer (Read-only)
+  officer_email?: string; // Alternate field used by some backends
   start_time: string; // ISO 8601 format
   end_time: string | null; // ISO 8601 format or null if ACTIVE
   patrol_config: {
