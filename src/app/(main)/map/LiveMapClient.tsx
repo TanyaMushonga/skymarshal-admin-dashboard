@@ -349,8 +349,8 @@ export default function LiveMapClient() {
                   <p className="text-[10px] md:text-xs font-black text-slate-100 uppercase tracking-tight">
                     {p.drone_id}
                   </p>
-                  <p className="text-[9px] text-slate-500 font-medium">
-                    {p.officer_name?.split("@")[0] || "Unassigned"}
+                  <p className="text-[9px] text-slate-400 font-bold uppercase">
+                    {p.officer_name || p.officer_email || "Unassigned"}
                   </p>
                 </div>
               </div>
@@ -432,101 +432,123 @@ export default function LiveMapClient() {
         {detailPatrol && (
           <div className="space-y-6">
             {/* Header Section */}
-            <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-slate-900/60 rounded-2xl p-5 border border-white/10 shadow-inner">
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl font-black tracking-tighter text-blue-400">
                   {detailPatrol.drone_id}
                 </span>
                 <div
-                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${detailPatrol.status_display === "online" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${detailPatrol.status_display === "online" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}
                 >
                   {detailPatrol.status_display || "OFFLINE"}
                 </div>
               </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5 uppercase font-bold tracking-widest">
-                <Shield size={12} className="text-indigo-500" />
-                Officer:{" "}
-                {detailPatrol.officer_name?.split("@")[0] || "Unassigned"}
-              </p>
+              <div className="flex items-center gap-2 text-[11px] text-slate-300 font-bold tracking-wide">
+                <div className="p-1 bg-indigo-500/10 rounded-md border border-indigo-500/20">
+                  <Shield size={12} className="text-indigo-400" />
+                </div>
+                <span>
+                  OFFICER:{" "}
+                  {detailPatrol.officer_name ||
+                    detailPatrol.officer_email ||
+                    "Unassigned"}
+                </span>
+              </div>
             </div>
 
             {/* Live Telemetry Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-28">
-                <div className="flex items-center justify-between text-slate-500">
-                  <Battery size={16} />
-                  <span className="text-[10px] font-black uppercase">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col justify-between h-32 group hover:bg-white/[0.07] transition-colors">
+                <div className="flex items-center justify-between text-slate-300">
+                  <div className="p-1.5 bg-emerald-500/10 rounded-lg">
+                    <Battery size={16} className="text-emerald-400" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">
                     Energy
                   </span>
                 </div>
-                <div>
-                  <p className="text-2xl font-black text-slate-100">
+                <div className="mt-2">
+                  <p className="text-3xl font-black text-white">
                     {detailPatrol.battery_level}%
                   </p>
-                  <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                  <div className="w-full h-1.5 bg-white/5 rounded-full mt-3 overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-1000 ${(detailPatrol.battery_level || 0) > 20 ? "bg-emerald-500" : "bg-red-500"}`}
+                      className={`h-full transition-all duration-1000 ${(detailPatrol.battery_level || 0) > 20 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500"}`}
                       style={{ width: `${detailPatrol.battery_level}%` }}
                     />
                   </div>
                 </div>
               </div>
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-28">
-                <div className="flex items-center justify-between text-slate-500">
-                  <Clock size={16} />
-                  <span className="text-[10px] font-black uppercase">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col justify-between h-32 group hover:bg-white/[0.07] transition-colors">
+                <div className="flex items-center justify-between text-slate-300">
+                  <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+                    <Clock size={16} className="text-indigo-400" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">
                     Duration
                   </span>
                 </div>
-                <p className="text-2xl font-black text-slate-100 font-mono">
-                  {formatDuration(detailPatrol.flight_duration_seconds || 0)}
-                </p>
+                <div className="mt-2">
+                  <p className="text-2xl font-black text-white font-mono tracking-tight">
+                    {formatDuration(detailPatrol.flight_duration_seconds || 0)}
+                  </p>
+                </div>
               </div>
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-28">
-                <div className="flex items-center justify-between text-slate-500">
-                  <MapPin size={16} />
-                  <span className="text-[10px] font-black uppercase">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col justify-between h-32 group hover:bg-white/[0.07] transition-colors">
+                <div className="flex items-center justify-between text-slate-300">
+                  <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                    <MapPin size={16} className="text-blue-400" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">
                     Altitude
                   </span>
                 </div>
-                <p className="text-2xl font-black text-slate-100">
-                  {detailPatrol.latest_location?.altitude || 0}
-                  <span className="text-xs ml-1 text-slate-500">m</span>
-                </p>
+                <div className="mt-2 text-right">
+                  <p className="text-3xl font-black text-white">
+                    {detailPatrol.latest_location?.altitude || 0}
+                    <span className="text-xs ml-1 text-slate-400">m</span>
+                  </p>
+                </div>
               </div>
-              <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col justify-between h-28">
-                <div className="flex items-center justify-between text-slate-500">
-                  <Target size={16} />
-                  <span className="text-[10px] font-black uppercase">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex flex-col justify-between h-32 group hover:bg-white/[0.07] transition-colors">
+                <div className="flex items-center justify-between text-slate-300">
+                  <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                    <Target size={16} className="text-amber-400" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">
                     Detections
                   </span>
                 </div>
-                <p className="text-2xl font-black text-blue-400">
-                  {detailPatrol.detection_count || 0}
-                </p>
+                <div className="mt-2 text-right">
+                  <p className="text-3xl font-black text-blue-400">
+                    {detailPatrol.detection_count || 0}
+                  </p>
+                </div>
               </div>
             </div>
 
             {/* Location Card */}
-            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <Navigation size={12} className="rotate-45" /> Current
-                Coordinates
+            <div className="bg-slate-900/40 p-5 rounded-2xl border border-white/10 shadow-lg">
+              <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <div className="p-1 bg-blue-500/20 rounded-md">
+                  <Navigation size={12} className="rotate-45 text-blue-400" />
+                </div>
+                Current Coordinates
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6 bg-black/20 p-4 rounded-xl border border-white/5">
                 <div>
-                  <p className="text-[8px] font-black text-slate-500 uppercase mb-0.5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">
                     Latitude
                   </p>
-                  <p className="text-xs font-bold text-slate-200 font-mono">
+                  <p className="text-sm font-bold text-white font-mono">
                     {detailPatrol.latest_location?.latitude.toFixed(6)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-[8px] font-black text-slate-500 uppercase mb-0.5">
+                <div className="border-l border-white/10 pl-6">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-wider">
                     Longitude
                   </p>
-                  <p className="text-xs font-bold text-slate-200 font-mono">
+                  <p className="text-sm font-bold text-white font-mono">
                     {detailPatrol.latest_location?.longitude.toFixed(6)}
                   </p>
                 </div>
@@ -535,12 +557,12 @@ export default function LiveMapClient() {
 
             {/* Violations Section */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <AlertTriangle size={12} className="text-red-500" />{" "}
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <h3 className="text-[10px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                  <AlertTriangle size={14} className="text-red-500" />{" "}
                   Violations Detected
                 </h3>
-                <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-md">
+                <span className="text-xs font-black text-red-500 bg-red-500/20 px-3 py-1 rounded-full border border-red-500/30">
                   {detailPatrol.violation_count || 0}
                 </span>
               </div>
