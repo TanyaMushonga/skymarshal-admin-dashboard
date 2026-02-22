@@ -189,7 +189,7 @@ export default function PatrolsClient({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <StatCard
           label="Live Operations"
           value={activeCount.toString()}
@@ -201,12 +201,6 @@ export default function PatrolsClient({
           value={completedToday.toString()}
           icon={<History size={24} />}
           color="indigo"
-        />
-        <StatCard
-          label="Operational Rate"
-          value="99.9%"
-          icon={<Shield size={24} />}
-          color="blue"
         />
       </div>
 
