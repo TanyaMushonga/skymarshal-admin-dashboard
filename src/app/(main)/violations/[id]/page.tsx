@@ -10,6 +10,7 @@ import {
   Shield,
   ChevronLeft,
   ArrowRight,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -102,6 +103,32 @@ export default async function ViolationDetailPage({
                   <p className="text-sm font-medium text-slate-200">
                     License Plate OCR Match
                   </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-slate-400">
+                  <MapPin size={18} />
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold">
+                    Location
+                  </p>
+                  {violation.evidence_meta?.coordinates?.lat &&
+                  violation.evidence_meta?.coordinates?.lon ? (
+                    <a
+                      href={`https://www.google.com/maps?q=${violation.evidence_meta.coordinates.lat},${violation.evidence_meta.coordinates.lon}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors underline break-all"
+                    >
+                      {violation.evidence_meta.coordinates.lat.toFixed(4)},{" "}
+                      {violation.evidence_meta.coordinates.lon.toFixed(4)}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-medium text-slate-500">
+                      Coordinates Unavailable
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

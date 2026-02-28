@@ -9,6 +9,8 @@ import {
   Eye,
   X,
   Play,
+  ExternalLink,
+  MapPin,
   Image as ImageIcon,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -411,9 +413,23 @@ export default function ViolationsClient({
                           <p className="text-xs text-muted-foreground">
                             Location
                           </p>
-                          <p className="text-base font-medium text-foreground">
-                            {selectedViolation.evidence_meta.location}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-base font-medium text-foreground">
+                              {selectedViolation.evidence_meta.location}
+                            </p>
+                            {selectedViolation.evidence_meta.coordinates && (
+                              <a
+                                href={`https://www.google.com/maps?q=${selectedViolation.evidence_meta.coordinates.lat},${selectedViolation.evidence_meta.coordinates.lon}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline bg-primary/10 px-3 py-1.5 rounded-lg transition-all"
+                              >
+                                <MapPin size={14} />
+                                View on Map
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -445,14 +461,21 @@ export default function ViolationsClient({
                   <div className="flex items-center gap-2 mb-3">
                     <ImageIcon size={16} className="text-primary" />
                     <p className="text-sm font-semibold text-foreground uppercase tracking-wider">
-                      Image Snapshot
+                      Photographic Evidence
                     </p>
                   </div>
-                  <img
-                    src={selectedViolation.image_snapshot}
-                    alt="Violation snapshot"
-                    className="w-full rounded-lg border border-border/50"
-                  />
+                  <div className="relative group overflow-hidden rounded-xl border border-border/50 shadow-lg bg-muted/20">
+                    <img
+                      src={selectedViolation.image_snapshot}
+                      alt="Violation snapshot"
+                      className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                      <p className="text-white text-sm font-medium">
+                        Captured by Surveillance Drone
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

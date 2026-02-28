@@ -143,9 +143,11 @@ export default function LiveMapClient() {
               typeof coord[0] === "number" &&
               typeof coord[1] === "number" &&
               !isNaN(coord[0]) &&
-              !isNaN(coord[1]),
+              !isNaN(coord[1]) &&
+              coord[0] !== 0 && // Avoid literal zero if it's a placeholder
+              coord[1] !== 0,
           )
-          .map((coord: any) => [coord[1], coord[0]]);
+          .map((coord: any) => [Number(coord[1]), Number(coord[0])]);
 
         if (validCoords.length > 0) {
           const polyline = L.polyline(validCoords, {
@@ -180,8 +182,12 @@ export default function LiveMapClient() {
             weight: 2,
             opacity: 1,
             fillOpacity: 0.9,
-          }).addTo(mapRef.current);
-          markersRef.current.set(patrol.id, marker);
+          });
+
+          if (marker && mapRef.current) {
+            marker.addTo(mapRef.current);
+            markersRef.current.set(patrol.id, marker);
+          }
         } else {
           marker.setLatLng([latitude, longitude]);
           marker.setStyle({
@@ -277,13 +283,18 @@ export default function LiveMapClient() {
       typeof patrol.latest_location.latitude === "number" &&
       typeof patrol.latest_location.longitude === "number" &&
       !isNaN(patrol.latest_location.latitude) &&
-      !isNaN(patrol.latest_location.longitude)
+      !isNaN(patrol.latest_location.longitude) &&
+      mapRef.current
     ) {
-      mapRef.current?.setView(
-        [patrol.latest_location.latitude, patrol.latest_location.longitude],
-        16,
-        { animate: true },
-      );
+      try {
+        mapRef.current.setView(
+          [patrol.latest_location.latitude, patrol.latest_location.longitude],
+          16,
+          { animate: true },
+        );
+      } catch (err) {
+        console.error("Leaflet setView error:", err);
+      }
     }
 
     // Fetch violations for this patrol

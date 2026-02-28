@@ -156,6 +156,10 @@ export interface ViolationEvidenceMeta {
   speed_detected?: number;
   speed_limit?: number;
   location?: string;
+  coordinates?: {
+    lat: number;
+    lon: number;
+  };
   [key: string]: any;
 }
 

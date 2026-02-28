@@ -33,7 +33,7 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative group overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl transition-all duration-500 hover:shadow-primary/20"
+      className="relative group overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl transition-all duration-500 hover:shadow-primary/20 h-full flex flex-col"
     >
       {/* Top Bar / Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -53,8 +53,7 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
         </div>
       </div>
 
-      {/* Main Video Display Area */}
-      <div className="aspect-video w-full flex items-center justify-center bg-[#0a0a0a]">
+      <div className="flex-1 w-full flex items-center justify-center bg-[#0a0a0a] min-h-0 relative">
         {frame ? (
           <img
             src={`data:image/jpeg;base64,${frame}`}

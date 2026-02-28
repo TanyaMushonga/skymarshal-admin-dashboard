@@ -477,10 +477,7 @@ export default function DronesClient({
             <thead>
               <tr className="bg-muted/50 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                 <th className="px-6 py-4">Drone Info</th>
-                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Health</th>
-                <th className="px-6 py-4">Assigned To</th>
-                <th className="px-6 py-4">Latest Pos</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
@@ -504,18 +501,6 @@ export default function DronesClient({
                           {drone.drone_id} • {drone.model}
                         </p>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${getStatusColor(
-                          drone.status?.status || "",
-                        )}`}
-                      ></span>
-                      <span className="text-sm font-medium capitalize text-muted-foreground">
-                        {drone.status?.status || "Unknown"}
-                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -544,22 +529,6 @@ export default function DronesClient({
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-muted-foreground truncate max-w-[120px]">
-                      {drone.assigned_officer_name || "Unassigned"}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <MapPin size={14} />
-                      <span className="text-[10px] whitespace-nowrap">
-                        {drone.latest_location?.latitude.toFixed(4) || "0.0000"}
-                        ,{" "}
-                        {drone.latest_location?.longitude.toFixed(4) ||
-                          "0.0000"}
-                      </span>
-                    </div>
-                  </td>
                   <td className="px-6 py-4 text-right">
                     <button className="p-1 hover:bg-muted rounded transition-colors text-muted-foreground">
                       <MoreVertical size={18} />
@@ -570,7 +539,7 @@ export default function DronesClient({
               {drones.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={3}
                     className="px-6 py-8 text-center text-muted-foreground"
                   >
                     No drones found matching your criteria.

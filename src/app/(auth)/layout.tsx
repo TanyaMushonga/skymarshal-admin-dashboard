@@ -26,11 +26,9 @@ const slides = [
   },
 ];
 
-function AuthRedirectCheck() {
+function AuthRedirectCheck({ isExpired }: { isExpired: boolean }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isExpired = searchParams.get("expired") === "true";
 
   useEffect(() => {
     if (
@@ -52,7 +50,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isExpired = searchParams.get("expired") === "true";
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Redirect logic is now handled by the suspended AuthRedirectCheck component
@@ -64,10 +63,7 @@ export default function AuthLayout({
     return () => clearInterval(timer);
   }, []);
 
-  if (
-    status === "loading" ||
-    (status === "authenticated" && !session?.error && session?.accessToken)
-  ) {
+  if (!isExpired && status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Activity className="animate-spin text-primary" size={40} />
@@ -84,7 +80,7 @@ export default function AuthLayout({
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             {children}
             <Suspense fallback={null}>
-              <AuthRedirectCheck />
+              <AuthRedirectCheck isExpired={isExpired} />
             </Suspense>
           </div>
 
