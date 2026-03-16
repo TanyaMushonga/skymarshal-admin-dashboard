@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Sheet from "@/components/ui/Sheet";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import DroneAPIKeyManager from "./[id]/components/DroneAPIKeyManager";
 
 // Simple debounce hook
 function useDebounce<T>(value: T, delay: number): [T] {
@@ -755,6 +756,11 @@ export default function DronesClient({
                     </span>
                   </div>
                 </div>
+
+                <DroneAPIKeyManager
+                  droneId={selectedDrone.drone_id}
+                  initialKeys={selectedDrone.api_keys}
+                />
 
                 <div className="pt-4 flex flex-col gap-2">
                   <button
