@@ -5,6 +5,7 @@ import { Key, RefreshCw, Copy, Check, Eye, EyeOff, Trash2, Plus, ShieldAlert } f
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import Modal from '@/components/ui/Modal';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface APIKey {
   id: string | number;
@@ -27,6 +28,8 @@ export default function DroneAPIKeyManager({ droneId, initialKeys }: DroneAPIKey
   const [showKey, setShowKey] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
+  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
+  const [pendingRevokeId, setPendingRevokeId] = useState<string | number | null>(null);
 
   const fetchKeys = async () => {
     try {
@@ -67,15 +70,25 @@ export default function DroneAPIKeyManager({ droneId, initialKeys }: DroneAPIKey
     }
   };
 
-  const revokeKey = async (keyId: string | number) => {
-    if (!confirm('Are you sure you want to revoke this key? It will immediately stop working.')) return;
+  const handleRevokeClick = (keyId: string | number) => {
+    setPendingRevokeId(keyId);
+    setRevokeConfirmOpen(true);
+  };
+
+  const confirmRevokeKey = async () => {
+    if (pendingRevokeId === null) return;
     
+    setIsLoading(true);
     try {
-      await api.post(`/drones/${droneId}/revoke_key/`, { key_id: keyId });
+      await api.post(`/drones/${droneId}/revoke_key/`, { key_id: pendingRevokeId });
       toast.success('API Key revoked');
       fetchKeys();
     } catch (error) {
       console.error('Failed to revoke key:', error);
+    } finally {
+      setIsLoading(false);
+      setRevokeConfirmOpen(false);
+      setPendingRevokeId(null);
     }
   };
 
@@ -119,7 +132,7 @@ export default function DroneAPIKeyManager({ droneId, initialKeys }: DroneAPIKey
                   </p>
                 </div>
                 <button
-                  onClick={() => revokeKey(apiKey.id)}
+                  onClick={() => handleRevokeClick(apiKey.id)}
                   className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-destructive/10 text-destructive rounded-md transition-all"
                   title="Revoke Key"
                 >
@@ -231,6 +244,20 @@ export default function DroneAPIKeyManager({ droneId, initialKeys }: DroneAPIKey
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={revokeConfirmOpen}
+        onClose={() => {
+          setRevokeConfirmOpen(false);
+          setPendingRevokeId(null);
+        }}
+        onConfirm={confirmRevokeKey}
+        title="Revoke API Key"
+        description="Are you sure you want to revoke this key? It will immediately stop working and this action cannot be undone."
+        confirmText="Revoke Key"
+        variant="destructive"
+        loading={isLoading}
+      />
     </div>
   );
 }

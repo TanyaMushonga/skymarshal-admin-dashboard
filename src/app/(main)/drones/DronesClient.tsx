@@ -338,31 +338,7 @@ export default function DronesClient({
     }
   };
 
-  const handleDeleteDrone = async () => {
-    if (!selectedDrone) return;
-    if (
-      !confirm(
-        "Are you sure you want to delete this drone? This action cannot be undone.",
-      )
-    )
-      return;
 
-    setLoading(true);
-    try {
-      await api.delete(`/drones/${selectedDrone.drone_id}/`);
-      setDrones((prev) =>
-        prev.filter((d) => d.drone_id !== selectedDrone.drone_id),
-      );
-      setIsSheetOpen(false);
-      toast.success("Drone deleted successfully");
-      router.refresh();
-    } catch (error) {
-      console.error("Delete failed", error);
-      toast.error("Failed to delete drone");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
