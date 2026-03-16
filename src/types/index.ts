@@ -78,6 +78,7 @@ export interface Drone {
   assigned_officer_name: string; // Read-only helper
   status: DroneStatus;
   latest_location: DroneLocation | null;
+  api_keys?: Array<{ id: number | string; name: string; prefix: string }> | null;
   created_at: string;
   updated_at: string;
 }
