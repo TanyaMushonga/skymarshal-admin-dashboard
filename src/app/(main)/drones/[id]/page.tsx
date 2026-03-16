@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import DroneAPIKeyManager from "./components/DroneAPIKeyManager";
+
 export default async function DroneDetailPage({
   params,
 }: {
@@ -163,12 +165,17 @@ export default async function DroneDetailPage({
                 </span>
               </div>
             </div>
-            <button className="w-full mt-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-bold transition-colors">
-              Edit Configuration
-            </button>
-          </div>
+              <button className="w-full mt-6 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-bold transition-colors">
+                Edit Configuration
+              </button>
+            </div>
 
-          <div className="bg-red-500/10 rounded-2xl p-6 border border-red-500/20">
+            <DroneAPIKeyManager
+              droneId={drone.drone_id}
+              initialKeys={drone.api_keys}
+            />
+
+            <div className="bg-red-500/10 rounded-2xl p-6 border border-red-500/20">
             <h3 className="text-lg font-bold text-red-400 mb-2 flex items-center gap-2">
               <Shield size={18} /> Emergency Access
             </h3>
