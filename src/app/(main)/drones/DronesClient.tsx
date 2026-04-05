@@ -338,8 +338,6 @@ export default function DronesClient({
     }
   };
 
-
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "online":
