@@ -26,23 +26,7 @@ const slides = [
   },
 ];
 
-function AuthRedirectCheck({ isExpired }: { isExpired: boolean }) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (
-      status === "authenticated" &&
-      !session?.error &&
-      session?.accessToken &&
-      !isExpired
-    ) {
-      router.replace("/dashboard");
-    }
-  }, [status, session, router, isExpired]);
-
-  return null;
-}
+import { AuthSuspenseWrapper } from "./AuthClientWrapper";
 
 export default function AuthLayout({
   children,
@@ -50,11 +34,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const searchParams = useSearchParams();
-  const isExpired = searchParams.get("expired") === "true";
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  // Redirect logic is now handled by the suspended AuthRedirectCheck component
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -63,7 +43,7 @@ export default function AuthLayout({
     return () => clearInterval(timer);
   }, []);
 
-  if (!isExpired && status === "loading") {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Activity className="animate-spin text-primary" size={40} />
@@ -76,13 +56,7 @@ export default function AuthLayout({
       {/* Left Column: Auth Forms */}
       <div className="flex flex-col p-8 lg:p-12 xl:p-20 justify-center">
         <div className="w-full max-w-md mx-auto">
-          {/* Children (Page Content) */}
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {children}
-            <Suspense fallback={null}>
-              <AuthRedirectCheck isExpired={isExpired} />
-            </Suspense>
-          </div>
+          <AuthSuspenseWrapper>{children}</AuthSuspenseWrapper>
 
           {/* Footer Info */}
           <div className="mt-12 pt-8 border-t border-border">
