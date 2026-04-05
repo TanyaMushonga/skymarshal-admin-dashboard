@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Modal from "@/components/ui/Modal";
 import { Drone, Patrol } from "@/types";
 import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import {
   Plane,
   AlertCircle,
@@ -29,6 +30,7 @@ export default function StartPatrolModal({
   onStarted,
   editPatrol,
 }: StartPatrolModalProps) {
+  const router = useRouter();
   const [drones, setDrones] = useState<Drone[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -241,12 +243,16 @@ export default function StartPatrolModal({
       if (editPatrol) {
         await api.patch(`/patrols/${editPatrol.id}/`, payload);
         toast.success("Patrol updated successfully");
+        onStarted();
+        onClose();
       } else {
-        await api.post("/patrols/start/", payload);
-        toast.success("Patrol started successfully");
+        const newPatrol = await api.post<Patrol>("/patrols/start/", payload);
+        toast.success("Mission launched! Redirecting to live feed...");
+        onStarted();
+        onClose();
+        // Redirect to live footage page, pre-selecting this patrol
+        router.push(`/live-footage?patrolId=${newPatrol.id}`);
       }
-      onStarted();
-      onClose();
     } catch (error: any) {
       if (error.response?.status === 409) {
         toast.error("Drone is already on an active patrol");
