@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useState, Suspense } from "react";
 import { ShieldCheck, ArrowRight, Loader2, ArrowLeft } from "lucide-react";
