@@ -172,6 +172,34 @@ export default function LiveFootageClient({
             />
           </div>
 
+          {/* Simulate button — for testing without ESP32 */}
+          {selectedPatrol && (
+            <button
+              onClick={async () => {
+                const droneId = selectedPatrol.drone_id_str || selectedPatrol.drone_id;
+                try {
+                  await api.post(`/streams/simulate_for_drone/`, {
+                    drone_id: droneId,
+                    patrol_id: selectedPatrol.id,
+                  });
+                  toast.success("Simulation started! Feed initialising...");
+                  setTimeout(() => fetchStreams(), 1500);
+                } catch (err: any) {
+                  if (err.response?.data?.error?.includes("already active")) {
+                    toast.info("Simulation already running for this drone.");
+                    fetchStreams();
+                  } else {
+                    toast.error("Failed to start simulation.");
+                  }
+                }
+              }}
+              className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-xl border border-amber-500/20 transition-all flex items-center gap-2 px-4 text-xs font-black uppercase"
+            >
+              <Wifi size={16} />
+              Simulate
+            </button>
+          )}
+
           <button
             onClick={() => setIsModalOpen(true)}
             className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-xl border border-emerald-500/20 transition-all flex items-center gap-2 px-4 text-xs font-black uppercase"
@@ -180,6 +208,7 @@ export default function LiveFootageClient({
             New
           </button>
         </div>
+
       </div>
 
       <div className="flex-1 w-full min-h-0">
