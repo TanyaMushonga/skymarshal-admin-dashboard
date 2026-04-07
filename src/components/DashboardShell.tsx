@@ -15,7 +15,22 @@ interface DashboardShellProps {
 
 function DashboardShellInner({ children }: DashboardShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isCollapsed, setCollapsed] = useState(false);
   const { showSessionExpired } = useSession401();
+
+  // Load sidebar state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved !== null) {
+      setCollapsed(saved === "true");
+    }
+  }, []);
+
+  const toggleCollapse = () => {
+    const newState = !isCollapsed;
+    setCollapsed(newState);
+    localStorage.setItem("sidebar-collapsed", String(newState));
+  };
 
   // Register global handler on mount
   useEffect(() => {
@@ -34,10 +49,17 @@ function DashboardShellInner({ children }: DashboardShellProps) {
         />
       )}
 
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={toggleCollapse}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <main
-        className={`flex-1 flex flex-col h-screen transition-all duration-300 lg:ml-64`}
+        className={`flex-1 flex flex-col h-screen transition-all duration-300 ${
+          isCollapsed ? "lg:ml-20" : "lg:ml-64"
+        }`}
       >
         <Header onMenuClick={toggleSidebar} />
 
