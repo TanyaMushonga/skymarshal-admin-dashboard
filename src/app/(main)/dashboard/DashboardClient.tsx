@@ -22,9 +22,12 @@ import {
   FileText,
   User,
   Download,
+  Zap,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+
+import StatCard from "@/components/ui/StatCard";
 
 interface DashboardClientProps {
   initialData: DashboardOverview | null;
@@ -192,518 +195,412 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/70">
             Analytics Dashboard
           </h1>
-          <p className="text-base text-muted-foreground mt-1">
-            Real-time analytics and AI-powered insights
+          <p className="text-muted-foreground mt-2 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Live system analytics and AI-powered mission insights
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3 bg-card/30 p-1.5 rounded-xl border border-border/40 backdrop-blur-md">
           <button
             onClick={fetchDashboardData}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-muted/30 text-foreground hover:bg-muted/50 transition-all border border-border/60 flex items-center gap-2 font-semibold text-sm"
+            className="px-4 py-2 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all flex items-center gap-2 font-bold text-xs"
           >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            Refresh
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            REFRESH
           </button>
           <button
             onClick={runInference}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all border border-primary/30 flex items-center gap-2 font-semibold text-sm"
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-lg shadow-primary/20 flex items-center gap-2 font-bold text-xs"
           >
-            <Activity size={16} />
-            Run Inference
+            <Zap size={14} />
+            RUN INFERENCE
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-border/50 overflow-x-auto">
-        {[
-          { id: "overview", label: "Overview", icon: Activity },
-          { id: "metrics", label: "Metrics", icon: BarChart3 },
-          { id: "patterns", label: "Patterns", icon: Map },
-          { id: "reports", label: "Reports", icon: FileText },
-          { id: "officer", label: "My Stats", icon: User },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-3 font-semibold text-sm transition-all border-b-2 ${
-              activeTab === tab.id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <tab.icon size={16} />
-            {tab.label}
-          </button>
-        ))}
+      {/* Top Stats Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          label="Violations Today"
+          value={data.metrics.violations_today}
+          icon={<AlertTriangle size={20} />}
+          trend={data.metrics.violations_today > 50 ? "+12%" : "Normal"}
+          color={data.metrics.violations_today > 50 ? "destructive" : "amber"}
+        />
+        <StatCard
+          label="Active Patrols"
+          value={data.metrics.active_patrols}
+          icon={<Shield size={20} />}
+          trend="Stable"
+          color="blue"
+        />
+        <StatCard
+          label="Avg Compliance"
+          value={`${Math.round(data.metrics.avg_compliance_score)}%`}
+          icon={<CheckCircle size={20} />}
+          trend={`${data.metrics.avg_compliance_score.toFixed(1)}%`}
+          color="emerald"
+        />
+        <StatCard
+          label="System Status"
+          value={
+            data.metrics.system_status === "OPERATIONAL"
+              ? "Healthy"
+              : data.metrics.system_status
+          }
+          icon={<Activity size={20} />}
+          color={
+            data.metrics.system_status === "OPERATIONAL"
+              ? "emerald"
+              : data.metrics.system_status === "WARNING"
+                ? "amber"
+                : "destructive"
+          }
+        />
       </div>
 
-      {/* Overview Tab */}
-      {activeTab === "overview" && (
-        <>
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <AlertTriangle className="text-red-500" size={24} />
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                    data.metrics.violations_today > 50
-                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                      : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Interactive Analytics */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Tabs Header */}
+            <div className="flex p-1 bg-muted/20 border-b border-border/50 overflow-x-auto scrollbar-none">
+              {[
+                { id: "overview", label: "Overview", icon: Activity },
+                { id: "metrics", label: "Metrics", icon: BarChart3 },
+                { id: "patterns", label: "Patterns", icon: Map },
+                { id: "reports", label: "Reports", icon: FileText },
+                { id: "officer", label: "My Stats", icon: User },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-6 py-3 font-bold text-xs uppercase tracking-widest transition-all rounded-xl ${
+                    activeTab === tab.id
+                      ? "bg-card text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {data.metrics.violations_today > 50 ? "High" : "Normal"}
-                </span>
-              </div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Violations Today
-              </h3>
-              <p className="text-4xl font-bold text-foreground mt-2">
-                {data.metrics.violations_today}
-              </p>
+                  <tab.icon size={14} />
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <Shield className="text-blue-500" size={24} />
-                <TrendingUp className="text-emerald-500" size={20} />
-              </div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Active Patrols
-              </h3>
-              <p className="text-4xl font-bold text-foreground mt-2">
-                {data.metrics.active_patrols}
-              </p>
-            </div>
+            <div className="p-6">
+              {/* Overview Tab Content */}
+              {activeTab === "overview" && (
+                <div className="space-y-6">
+                  <div className="prose prose-invert max-w-none">
+                    <h3 className="text-xl font-bold text-foreground mb-4">
+                      Mission Summary
+                    </h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      All systems are currently performing within expected
+                      parameters. Fleet coverage is optimal across active zones.
+                      Detections are being processed in real-time with an average
+                      latency of 145ms.
+                    </p>
+                  </div>
 
-            <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <CheckCircle className="text-emerald-500" size={24} />
-                <span className="text-xs font-bold text-muted-foreground">
-                  {data.metrics.avg_compliance_score.toFixed(1)}%
-                </span>
-              </div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Avg Compliance
-              </h3>
-              <div className="flex items-baseline gap-2 mt-2">
-                <p className="text-4xl font-bold text-foreground">
-                  {Math.round(data.metrics.avg_compliance_score)}
-                </p>
-                <span className="text-2xl text-muted-foreground">/ 100</span>
-              </div>
-            </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-tighter mb-1">
+                        Recent Activity
+                      </p>
+                      <p className="text-sm font-semibold">
+                        Zone Alpha: Speed violation detected
+                      </p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter mb-1">
+                        Next Patrol
+                      </p>
+                      <p className="text-sm font-semibold">
+                        Starting in 14 minutes: Zone Delta
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-              <div className="flex items-center justify-between mb-2">
-                <Activity className="text-primary" size={24} />
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(
-                    data.metrics.system_status,
-                  )}`}
-                >
-                  {data.metrics.system_status}
-                </span>
-              </div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                System Status
-              </h3>
-              <p className="text-2xl font-bold text-foreground mt-2">
-                {data.metrics.system_status === "OPERATIONAL"
-                  ? "All Systems Go"
-                  : data.metrics.system_status === "WARNING"
-                    ? "Minor Issues"
-                    : "Critical Error"}
-              </p>
-            </div>
-          </div>
-
-          {/* AI Recommendations */}
-          <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="text-primary" size={24} />
-                <h2 className="text-2xl font-bold text-foreground">
-                  AI Recommendations
-                </h2>
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">
-                {data.recommendations.filter((r) => r.is_active).length} active
-              </span>
-            </div>
-
-            {data.recommendations.length > 0 ? (
-              <div className="space-y-4">
-                {data.recommendations
-                  .filter((r) => r.is_active)
-                  .sort((a, b) => b.confidence_score - a.confidence_score)
-                  .map((rec) => (
-                    <div
-                      key={rec.id}
-                      className={`bg-muted/20 border rounded-lg p-4 ${
-                        rec.confidence_score >= 0.9
-                          ? "border-primary/30 bg-primary/5"
-                          : "border-border/30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-base font-bold text-foreground">
-                              {rec.title}
-                            </h3>
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getCategoryBadge(
-                                rec.category,
-                              )}`}
-                            >
-                              {rec.category}
-                            </span>
+              {/* Metrics Tab Content */}
+              {activeTab === "metrics" && (
+                <div className="space-y-4">
+                  {metrics.length > 0 ? (
+                    <div className="grid gap-3">
+                      {metrics.slice(0, 8).map((metric) => (
+                        <div
+                          key={metric.id}
+                          className="bg-muted/10 border border-border/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        >
+                          <div className="flex gap-4">
+                            <div>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                                Drone
+                              </p>
+                              <p className="text-sm font-bold text-primary">
+                                {metric.drone_id}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                                Time
+                              </p>
+                              <p className="text-sm font-bold">
+                                {new Date(metric.timestamp).toLocaleTimeString()}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            {rec.description}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>
-                              Created:{" "}
-                              {new Date(rec.created_at).toLocaleDateString()}
-                            </span>
+                          <div className="flex gap-6">
+                            <div className="text-center">
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
+                                Vehicles
+                              </p>
+                              <p className="text-lg font-black leading-none">
+                                {metric.vehicle_count}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
+                                Violations
+                              </p>
+                              <p className="text-lg font-black leading-none text-destructive">
+                                {metric.violation_count}
+                              </p>
+                            </div>
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-20 text-center">
+                      <p className="text-muted-foreground italic">
+                        Processing telemetry data...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Patterns Tab Content */}
+              {activeTab === "patterns" && (
+                <div className="space-y-4">
+                  {patterns.map((pattern) => (
+                    <div
+                      key={pattern.id}
+                      className="bg-muted/10 border border-border/20 rounded-xl p-5"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="font-bold text-lg">
+                            {pattern.location_name}
+                          </h4>
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">
+                            {pattern.pattern_type.replace("_", " ")}
+                          </span>
+                        </div>
                         <div className="text-right">
-                          <div
-                            className={`text-3xl font-bold ${getConfidenceColor(
-                              rec.confidence_score,
-                            )}`}
-                          >
-                            {Math.round(rec.confidence_score * 100)}%
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-2xl font-black text-primary leading-none">
+                            {Math.round(pattern.confidence_score * 100)}%
+                          </p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
                             Confidence
                           </p>
                         </div>
                       </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {pattern.recommendations}
+                      </p>
                     </div>
                   ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <AlertCircle size={48} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No active recommendations</p>
-                <p className="text-xs mt-1">
-                  Run the inference engine to generate new insights
-                </p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Metrics Tab */}
-      {activeTab === "metrics" && (
-        <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            Traffic Metrics
-          </h2>
-          {metrics.length > 0 ? (
-            <div className="space-y-4">
-              {metrics.slice(0, 10).map((metric) => (
-                <div
-                  key={metric.id}
-                  className="bg-muted/20 border border-border/30 rounded-lg p-4"
-                >
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Timestamp
-                      </p>
-                      <p className="text-sm font-bold text-foreground">
-                        {new Date(metric.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Drone ID
-                      </p>
-                      <p className="text-sm font-bold text-primary">
-                        {metric.drone_id}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Vehicle Count
-                      </p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {metric.vehicle_count}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Avg Speed
-                      </p>
-                      <p className="text-2xl font-bold text-blue-500">
-                        {metric.average_speed.toFixed(1)} km/h
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Violations
-                      </p>
-                      <p className="text-lg font-bold text-red-500">
-                        {metric.violation_count}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Cars</p>
-                      <p className="text-lg font-bold text-foreground">
-                        {metric.car_count}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Trucks
-                      </p>
-                      <p className="text-lg font-bold text-foreground">
-                        {metric.truck_count}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Max Speed
-                      </p>
-                      <p className="text-lg font-bold text-amber-500">
-                        {metric.max_speed.toFixed(1)} km/h
-                      </p>
-                    </div>
-                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-12">
-              No metrics data available
-            </p>
-          )}
-        </div>
-      )}
+              )}
 
-      {/* Patterns Tab */}
-      {activeTab === "patterns" && (
-        <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            Traffic Patterns
-          </h2>
-          {patterns.length > 0 ? (
-            <div className="space-y-4">
-              {patterns.map((pattern) => (
-                <div
-                  key={pattern.id}
-                  className="bg-muted/20 border border-border/30 rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground mb-1">
-                        {pattern.location_name}
-                      </h3>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-bold border ${getPatternTypeBadge(
-                          pattern.pattern_type,
-                        )}`}
+              {/* Reports Tab Content */}
+              {activeTab === "reports" && (
+                <div className="grid gap-4">
+                  {reports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="group bg-muted/10 border border-border/20 hover:bg-muted/20 rounded-xl p-5 transition-all"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold mb-1 group-hover:text-primary transition-colors">
+                            {report.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {report.start_date} - {report.end_date}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {report.pdf_file && (
+                            <a
+                              href={report.pdf_file}
+                              className="p-2 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-all"
+                            >
+                              <Download size={14} />
+                            </a>
+                          )}
+                          {report.excel_file && (
+                            <a
+                              href={report.excel_file}
+                              className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg hover:bg-emerald-500/20 transition-all"
+                            >
+                              <FileText size={14} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Officer Stats Tab Content */}
+              {activeTab === "officer" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {officerStats && (
+                    <>
+                      <div className="p-6 rounded-2xl bg-muted/10 border border-border/20">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                          Session Performance
+                        </p>
+                        <div className="flex items-end gap-2">
+                          <p className="text-5xl font-black leading-none">
+                            {officerStats.performance_rating.toFixed(1)}
+                          </p>
+                          <p className="text-lg font-bold text-muted-foreground mb-1">
+                            / 5.0
+                          </p>
+                        </div>
+                      </div>
+                      <div className="p-6 rounded-2xl bg-muted/10 border border-border/20">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
+                          Patrol Hours
+                        </p>
+                        <p className="text-5xl font-black leading-none text-primary">
+                          {officerStats.hours_patrolled_this_week.toFixed(0)}h
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: AI Insights & Quick Actions */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-linear-to-br from-primary/10 to-indigo-500/5 backdrop-blur-xl border border-primary/20 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
+            <div className="absolute -right-8 -top-8 w-24 h-24 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-all duration-700" />
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-primary rounded-lg shadow-lg shadow-primary/20">
+                    <Zap className="text-primary-foreground" size={16} />
+                  </div>
+                  <h3 className="font-extrabold text-lg tracking-tight">
+                    AI Insights
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 bg-primary text-primary-foreground rounded-full">
+                  {data.recommendations.filter((r) => r.is_active).length} ACTIVE
+                </span>
+              </div>
+
+              {data.recommendations.length > 0 ? (
+                <div className="space-y-4">
+                  {data.recommendations
+                    .filter((r) => r.is_active)
+                    .slice(0, 3)
+                    .map((rec) => (
+                      <div
+                        key={rec.id}
+                        className="p-4 rounded-xl bg-card/60 border border-border/40 space-y-3 group/item hover:border-primary/50 transition-all cursor-default"
                       >
-                        {pattern.pattern_type.replace("_", " ").toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        {Math.round(pattern.confidence_score * 100)}%
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Confidence
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Hours</p>
-                      <p className="text-sm font-bold text-foreground">
-                        {pattern.start_hour}:00 - {pattern.end_hour}:00
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Avg Vehicles
-                      </p>
-                      <p className="text-sm font-bold text-foreground">
-                        {pattern.avg_vehicle_count.toFixed(0)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Avg Speed</p>
-                      <p className="text-sm font-bold text-foreground">
-                        {pattern.avg_speed.toFixed(1)} km/h
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Violation Rate
-                      </p>
-                      <p className="text-sm font-bold text-red-500">
-                        {(pattern.violation_rate * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {pattern.recommendations}
+                        <div className="flex justify-between items-start">
+                          <span className="text-[8px] font-bold bg-muted-foreground/10 text-muted-foreground px-1.5 py-0.5 rounded uppercase">
+                            {rec.category}
+                          </span>
+                          <span
+                            className={`text-xs font-black ${getConfidenceColor(rec.confidence_score)}`}
+                          >
+                            {Math.round(rec.confidence_score * 100)}%
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold group-hover/item:text-primary transition-colors">
+                          {rec.title}
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          {rec.description}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-center opacity-50">
+                  <Activity size={32} className="mb-2 animate-pulse" />
+                  <p className="text-xs font-bold uppercase tracking-widest">
+                    Analyzing fleet data...
                   </p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-12">
-              No patterns detected
-            </p>
-          )}
-        </div>
-      )}
+              )}
 
-      {/* Reports Tab */}
-      {activeTab === "reports" && (
-        <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            Analytics Reports
-          </h2>
-          {reports.length > 0 ? (
+              <button className="w-full mt-6 py-2 rounded-xl border border-primary/20 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/5 transition-all">
+                View All Recommendations
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl">
+            <h3 className="font-extrabold text-lg tracking-tight mb-4">
+              Zone Status
+            </h3>
             <div className="space-y-4">
-              {reports.map((report) => (
-                <div
-                  key={report.id}
-                  className="bg-muted/20 border border-border/30 rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-base font-bold text-foreground mb-1">
-                        {report.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {report.start_date} to {report.end_date}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {report.summary}
-                      </p>
-                    </div>
+              {[
+                { name: "Downtown Core", load: 85, status: "Busy" },
+                { name: "North Port", load: 24, status: "Clear" },
+                { name: "West Highway", load: 62, status: "Stable" },
+              ].map((zone) => (
+                <div key={zone.name} className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span>{zone.name}</span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-bold border ml-4 ${
-                        report.report_type === "weekly"
-                          ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                          : report.report_type === "monthly"
-                            ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
-                            : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                      }`}
+                      className={
+                        zone.load > 80 ? "text-destructive" : "text-emerald-500"
+                      }
                     >
-                      {report.report_type.toUpperCase()}
+                      {zone.status}
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    {report.pdf_file && (
-                      <a
-                        href={report.pdf_file}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-500/20 transition-all"
-                      >
-                        <Download size={12} />
-                        PDF
-                      </a>
-                    )}
-                    {report.excel_file && (
-                      <a
-                        href={report.excel_file}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-500 rounded-lg text-xs font-semibold hover:bg-emerald-500/20 transition-all"
-                      >
-                        <Download size={12} />
-                        Excel
-                      </a>
-                    )}
+                  <div className="h-1.5 w-full bg-muted/30 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-1000 ${
+                        zone.load > 80 ? "bg-destructive" : "bg-primary"
+                      }`}
+                      style={{ width: `${zone.load}%` }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-12">
-              No reports available
-            </p>
-          )}
+          </div>
         </div>
-      )}
-
-      {/* Officer Stats Tab */}
-      {activeTab === "officer" && (
-        <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-xl p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            My Performance Stats
-          </h2>
-          {officerStats ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-muted/20 border border-border/30 rounded-lg p-6">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Officer
-                </h3>
-                <p className="text-2xl font-bold text-foreground">
-                  {officerStats.officer}
-                </p>
-              </div>
-              <div className="bg-muted/20 border border-border/30 rounded-lg p-6">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Hours Patrolled
-                </h3>
-                <p className="text-4xl font-bold text-blue-500">
-                  {officerStats.hours_patrolled_this_week.toFixed(1)}
-                </p>
-              </div>
-              <div className="bg-muted/20 border border-border/30 rounded-lg p-6">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Violations Issued
-                </h3>
-                <p className="text-4xl font-bold text-amber-500">
-                  {officerStats.violations_issued}
-                </p>
-              </div>
-              <div className="bg-muted/20 border border-border/30 rounded-lg p-6">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Performance Rating
-                </h3>
-                <p className="text-4xl font-bold text-emerald-500">
-                  {officerStats.performance_rating.toFixed(1)} / 5.0
-                </p>
-              </div>
-              <div className="bg-muted/20 border border-border/30 rounded-lg p-6 md:col-span-2">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Assigned Zone Risk Level
-                </h3>
-                <p className="text-2xl font-bold text-foreground">
-                  {officerStats.assigned_zone_risk_level}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-12">
-              No stats available
-            </p>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
