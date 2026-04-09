@@ -99,6 +99,29 @@ export default function LiveFootageClient({
     }
   };
 
+  const handleSwitchMode = async (streamId: string | number, mode: 'LIVE' | 'SIMULATED') => {
+    // Optimistic update
+    setStreams(prev => prev.map(s => 
+      s.stream_id === String(streamId) ? { ...s, stream_mode: mode } : s
+    ));
+    
+    try {
+      if (mode === 'LIVE') {
+        await api.post(`/streams/${streamId}/live_feed/`);
+      } else {
+        await api.post(`/streams/${streamId}/simulate/`);
+      }
+      toast.success(`Switched to ${mode} mode`);
+      // Refresh in background without setting global loading if possible, 
+      // or just trust the optimistic update for now
+      fetchStreams(); 
+    } catch (error) {
+      toast.error(`Failed to switch to ${mode} mode`);
+      // Revert on error
+      fetchStreams();
+    }
+  };
+
   useEffect(() => {
     fetchStreams();
     const interval = setInterval(fetchStreams, 30000); // Poll every 30s
@@ -172,32 +195,56 @@ export default function LiveFootageClient({
             />
           </div>
 
-          {/* Simulate button — for testing without ESP32 */}
-          {selectedPatrol && (
+          {/* Mode Switcher Toggle */}
+          {selectedPatrol && selectedStream && (
+            <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl gap-1">
+              <button
+                onClick={() => handleSwitchMode(selectedStream.stream_id, 'LIVE')}
+                disabled={selectedStream.stream_mode === 'LIVE' || loading}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                  selectedStream.stream_mode === 'LIVE' 
+                    ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Activity size={14} />
+                Live Feed
+              </button>
+              <button
+                onClick={() => handleSwitchMode(selectedStream.stream_id, 'SIMULATED')}
+                disabled={selectedStream.stream_mode === 'SIMULATED' || loading}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                  selectedStream.stream_mode === 'SIMULATED' 
+                    ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)]' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Wifi size={14} />
+                Simulate
+              </button>
+            </div>
+          )}
+
+          {!selectedStream && selectedPatrol && (
             <button
-              onClick={async () => {
-                const droneId = selectedPatrol.drone_id_str || selectedPatrol.drone_id;
-                try {
-                  await api.post(`/streams/simulate_for_drone/`, {
-                    drone_id: droneId,
-                    patrol_id: selectedPatrol.id,
-                  });
-                  toast.success("Simulation started! Feed initialising...");
-                  setTimeout(() => fetchStreams(), 1500);
-                } catch (err: any) {
-                  if (err.response?.data?.error?.includes("already active")) {
-                    toast.info("Simulation already running for this drone.");
-                    fetchStreams();
-                  } else {
-                    toast.error("Failed to start simulation.");
-                  }
-                }
-              }}
-              className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-xl border border-amber-500/20 transition-all flex items-center gap-2 px-4 text-xs font-black uppercase"
-            >
-              <Wifi size={16} />
-              Simulate
-            </button>
+               onClick={async () => {
+                 const droneId = selectedPatrol.drone_id_str || selectedPatrol.drone_id;
+                 try {
+                   await api.post(`/streams/simulate_for_drone/`, {
+                     drone_id: droneId,
+                     patrol_id: selectedPatrol.id,
+                   });
+                   toast.success("Simulation started! Feed initialising...");
+                   setTimeout(() => fetchStreams(), 1500);
+                 } catch (err: any) {
+                    toast.error("Failed to start initial simulation.");
+                 }
+               }}
+               className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-xl border border-amber-500/20 transition-all flex items-center gap-2 px-4 text-xs font-black uppercase"
+             >
+               <Wifi size={16} />
+               Start Simulation
+             </button>
           )}
 
           <button
@@ -217,9 +264,13 @@ export default function LiveFootageClient({
             <div className="bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl p-4 shadow-xl flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4 px-2">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 text-xs font-bold uppercase tracking-wider">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    {selectedStream ? "Feed Live" : "Telemetry Only"}
+                  <div className={`flex items-center gap-2 px-4 py-1.5 border rounded-full text-xs font-bold uppercase tracking-wider ${
+                    selectedStream ? (selectedStream.stream_mode === 'LIVE' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-amber-500/10 border-amber-500/20 text-amber-500') : 'bg-slate-500/10 border-slate-500/20 text-slate-500'
+                  }`}>
+                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                      selectedStream ? (selectedStream.stream_mode === 'LIVE' ? 'bg-emerald-500' : 'bg-amber-500') : 'bg-slate-500'
+                    }`} />
+                    {selectedStream ? (selectedStream.stream_mode === 'LIVE' ? "Feed Live" : "Simulated Feed") : "Telemetry Only"}
                   </div>
                   <div className="flex items-center gap-2 text-base font-semibold text-foreground/80">
                     <User size={18} className="text-muted-foreground" />
