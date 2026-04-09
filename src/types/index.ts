@@ -119,6 +119,7 @@ export interface VideoStream {
   drone_name: string;
   rtsp_url: string;
   is_active: boolean;
+  stream_mode: "LIVE" | "SIMULATED";
   frame_rate: number;
   resolution: string;
   is_streaming: boolean;
