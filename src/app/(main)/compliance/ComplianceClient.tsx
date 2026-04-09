@@ -10,6 +10,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  Award,
+  ShieldCheck,
+  Trophy,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -17,8 +20,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
+interface ComplianceScore {
+  id: number;
+  license_plate: string;
+  owner_name: string;
+  make: string;
+  model: string;
+  safe_driving_points: number;
+  last_observation: string;
+}
+
 interface ComplianceClientProps {
   initialLotteries: Lottery[];
+  initialScores?: ComplianceScore[];
   initialPagination?: {
     count: number;
     next: string | null;
@@ -28,6 +42,7 @@ interface ComplianceClientProps {
 
 export default function ComplianceClient({
   initialLotteries,
+  initialScores = [],
   initialPagination,
 }: ComplianceClientProps) {
   const router = useRouter();
@@ -37,7 +52,9 @@ export default function ComplianceClient({
   );
   const debouncedSearch = useDebounce(searchInput, 500);
   const [lotteries, setLotteries] = useState<Lottery[]>(initialLotteries);
+  const [scores, setScores] = useState<ComplianceScore[]>(initialScores);
   const [loading, setLoading] = useState(false);
+  const [loadingScores, setLoadingScores] = useState(false);
   const [drawingLottery, setDrawingLottery] = useState<number | null>(null);
   const [deletingLottery, setDeletingLottery] = useState<number | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -79,6 +96,29 @@ export default function ComplianceClient({
     }
   };
 
+  const fetchScores = async (search?: string) => {
+    setLoadingScores(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("ordering", "-safe_driving_points");
+      if (search) params.set("search", search);
+      
+      const response = await api.get<PaginatedResponse<ComplianceScore> | ComplianceScore[]>(
+        `/compliance/scores/?${params.toString()}`,
+      );
+
+      if (Array.isArray(response)) {
+        setScores(response);
+      } else if (response && "results" in response) {
+        setScores(response.results || []);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch compliance scores");
+    } finally {
+      setLoadingScores(false);
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     const currentSearch = params.get("search") || "";
@@ -91,6 +131,9 @@ export default function ComplianceClient({
       }
       params.set("page", "1");
       router.push(`/compliance?${params.toString()}`);
+      
+      // Also fetch scores when search changes
+      fetchScores(debouncedSearch);
     }
   }, [debouncedSearch, router, searchParams]);
 
@@ -106,6 +149,7 @@ export default function ComplianceClient({
 
   const handleRefresh = () => {
     fetchLotteries(searchInput, currentPage);
+    fetchScores(searchInput);
     router.refresh();
   };
 
@@ -126,6 +170,7 @@ export default function ComplianceClient({
       );
       toast.success(`Lottery drawn! ${result.winners_count} winners selected`);
       await fetchLotteries(searchInput, currentPage);
+      await fetchScores(searchInput);
       router.refresh();
     } catch (error: any) {
       const errorMsg =
@@ -225,10 +270,10 @@ export default function ComplianceClient({
         </div>
         <button
           onClick={handleRefresh}
-          disabled={loading}
+          disabled={loading || loadingScores}
           className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-4 h-4 ${loading || loadingScores ? "animate-spin" : ""}`} />
           Refresh
         </button>
       </div>
@@ -243,7 +288,7 @@ export default function ComplianceClient({
           <input
             type="text"
             name="search"
-            placeholder="Search by name or description..."
+            placeholder="Search drivers or lotteries..."
             className="w-full pl-12 pr-4 py-3 bg-muted/30 border border-border/60 rounded-lg text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -251,143 +296,197 @@ export default function ComplianceClient({
         </form>
       </div>
 
-      {/* Table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50 border-b border-border">
-              <tr>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Lottery Name
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Draw Date
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Prize Pool
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Min Points
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Status
-                </th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Loading lotteries...
-                    </p>
-                  </td>
-                </tr>
-              ) : lotteries.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <p className="text-muted-foreground">No lotteries found</p>
-                  </td>
-                </tr>
-              ) : (
-                lotteries.map((lottery) => (
-                  <tr
-                    key={lottery.id}
-                    className="hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">
-                        {lottery.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-foreground">
-                      {formatDate(lottery.draw_date)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-semibold text-emerald-500">
-                        {formatCurrency(lottery.pool_amount)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-foreground">
-                      {lottery.minimum_points} pts
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(lottery.status)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {lottery.status === "OPEN" && (
-                          <button
-                            onClick={() => handleRunDraw(lottery.id)}
-                            disabled={drawingLottery === lottery.id}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                          >
-                            {drawingLottery === lottery.id ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Drawing...
-                              </>
-                            ) : (
-                              <>
-                                <Play className="w-4 h-4" />
-                                Run Draw
-                              </>
-                            )}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(lottery.id)}
-                          disabled={deletingLottery === lottery.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm border border-destructive/20"
-                          title="Delete lottery"
-                        >
-                          {deletingLottery === lottery.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Driver Scores Section */}
+        <div className="xl:col-span-1 space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <Award className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-bold">Top Safe Drivers</h2>
+          </div>
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 border-b border-border">
+                  <tr>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Driver/Vehicle
+                    </th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Points
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-card border border-border rounded-lg px-6 py-4">
-          <p className="text-sm text-muted-foreground">
-            Showing page {currentPage} of {totalPages} ({pagination.count} total
-            lotteries)
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={!pagination.previous || loading}
-              className="flex items-center gap-1 px-3 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={!pagination.next || loading}
-              className="flex items-center gap-1 px-3 py-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loadingScores ? (
+                    <tr>
+                      <td colSpan={2} className="px-6 py-8 text-center">
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+                      </td>
+                    </tr>
+                  ) : scores.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="px-6 py-8 text-center text-sm text-muted-foreground">
+                        No scores found
+                      </td>
+                    </tr>
+                  ) : (
+                    scores.map((score) => (
+                      <tr key={score.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-sm text-foreground">
+                            {score.license_plate}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {score.owner_name}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-xs font-bold border border-emerald-500/20">
+                            {score.safe_driving_points} pts
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Lotteries Section */}
+        <div className="xl:col-span-2 space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            <h2 className="text-xl font-bold">Active Lotteries</h2>
+          </div>
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 border-b border-border">
+                  <tr>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Lottery Name
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Draw Date
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Prize Pool
+                    </th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="text-right px-6 py-3 text-xs font-semibold text-foreground uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Loading lotteries...
+                        </p>
+                      </td>
+                    </tr>
+                  ) : lotteries.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center">
+                        <p className="text-muted-foreground">No lotteries found</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    lotteries.map((lottery) => (
+                      <tr
+                        key={lottery.id}
+                        className="hover:bg-muted/20 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-foreground">
+                            {lottery.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Min: {lottery.minimum_points} pts
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-foreground">
+                          {formatDate(lottery.draw_date)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm font-semibold text-emerald-500">
+                            {formatCurrency(lottery.pool_amount)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {getStatusBadge(lottery.status)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {lottery.status === "OPEN" && (
+                              <button
+                                onClick={() => handleRunDraw(lottery.id)}
+                                disabled={drawingLottery === lottery.id}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                              >
+                                {drawingLottery === lottery.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Play className="w-4 h-4" />
+                                )}
+                                <span className="hidden sm:inline">Run Draw</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDelete(lottery.id)}
+                              disabled={deletingLottery === lottery.id}
+                              className="p-1.5 bg-destructive/10 text-destructive rounded-lg hover:bg-destructive/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-destructive/20"
+                              title="Delete lottery"
+                            >
+                              {deletingLottery === lottery.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between bg-card border border-border rounded-lg px-6 py-4 mt-4">
+              <p className="text-xs text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={!pagination.previous || loading}
+                  className="p-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!pagination.next || loading}
+                  className="p-2 bg-card border border-border rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Confirm Dialogs */}
       <ConfirmDialog
