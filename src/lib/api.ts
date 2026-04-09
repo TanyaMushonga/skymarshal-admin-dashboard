@@ -100,8 +100,8 @@ apiClient.interceptors.response.use(
         }
       }
 
-      // For other errors, display a toast on the client and throw ApiError
-      if (typeof window !== "undefined") {
+      // For other errors, display a toast on the client (unless silent is requested) and throw ApiError
+      if (typeof window !== "undefined" && !(error.config as any)?.silent) {
         toast.error(apiError.message);
       }
 
