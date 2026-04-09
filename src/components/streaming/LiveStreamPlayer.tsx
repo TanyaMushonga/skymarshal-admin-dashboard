@@ -14,7 +14,7 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
   droneName = "Drone Feed",
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { frame, isConnected, error } = useVideoStream(streamId);
+  const { frame, source, isConnected, error } = useVideoStream(streamId);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -38,9 +38,9 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
       {/* Top Bar / Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <div className={`w-2 h-2 rounded-full animate-pulse ${source === 'SIMULATED' ? 'bg-amber-500' : 'bg-red-500'}`} />
           <span className="text-white font-bold text-base tracking-widest uppercase">
-            Live • {droneName}
+            {source === 'SIMULATED' ? 'Simulated' : 'Live'} • {droneName}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -77,20 +77,24 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
                   onClick={() => {
                     const api = require("@/lib/api").default;
                     api
-                      .post(`/streams/${streamId}/simulate/`, {
-                        video_file: "computer_vision/traffic_sample.mp4",
-                      })
+                      .post(
+                        `/streams/${streamId}/simulate/`,
+                        {
+                          video_file: "computer_vision/traffic_sample.mp4",
+                        },
+                        { silent: true },
+                      )
                       .then(() => {
                         window.location.reload();
                       })
                       .catch((err: any) => {
-                        // If already active, just reload to attempt connection
-                        if (
-                          err.response?.data?.error?.includes("already active")
-                        ) {
+                        // Handle ApiError or Axios error directly
+                        const errorMessage =
+                          err.message || err.response?.data?.detail || "";
+                        if (errorMessage.toLowerCase().includes("already active")) {
                           window.location.reload();
                         } else {
-                          console.error(err);
+                          console.error("Simulation fallback failed:", err);
                         }
                       });
                   }}
@@ -112,15 +116,20 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
                     onClick={async () => {
                       try {
                         const { default: api } = await import("@/lib/api");
-                        await api.post(`/streams/${streamId}/simulate/`, {
-                          video_file: "computer_vision/traffic_sample.mp4",
-                        });
+                        await api.post(
+                          `/streams/${streamId}/simulate/`,
+                          {
+                            video_file: "computer_vision/traffic_sample.mp4",
+                          },
+                          { silent: true },
+                        );
                         // The stream status should update, we can attempt to reconnect or just reload
                         setTimeout(() => window.location.reload(), 1000);
                       } catch (err: any) {
-                        if (
-                          err.response?.data?.error?.includes("already active")
-                        ) {
+                        // Handle ApiError or Axios error directly
+                        const errorMessage =
+                          err.message || err.response?.data?.detail || "";
+                        if (errorMessage.toLowerCase().includes("already active")) {
                           window.location.reload();
                         } else {
                           console.error("Failed to start simulation:", err);
@@ -139,11 +148,20 @@ const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({
 
         {/* Overlay Detections Badge (Simulated logic indicator) */}
         {frame && (
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
-            <Activity size={16} className="text-emerald-400" />
-            <span className="text-xs font-bold text-white uppercase tracking-tighter">
-              AI Processing Enabled
-            </span>
+          <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border ${source === 'SIMULATED' ? 'border-amber-500/30' : 'border-emerald-500/30'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${source === 'SIMULATED' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+              <span className={`text-[10px] font-black uppercase tracking-widest ${source === 'SIMULATED' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                {source === 'SIMULATED' ? 'Simulated Feed' : (source === 'LIVE' ? 'Live Feed' : 'Connecting...')}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10">
+              <Activity size={16} className="text-emerald-400" />
+              <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                AI Processing Enabled
+              </span>
+            </div>
           </div>
         )}
       </div>
