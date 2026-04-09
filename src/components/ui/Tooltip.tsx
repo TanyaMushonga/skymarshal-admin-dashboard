@@ -20,8 +20,38 @@ const Tooltip: React.FC<TooltipProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number; transform: string } | null>(null);
 
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    let top = 0;
+    let left = 0;
+    let transform = "";
+
+    switch (position) {
+      case "top":
+        top = rect.top;
+        left = rect.left + rect.width / 2;
+        transform = "translate(-50%, -100%) translateY(-8px)";
+        break;
+      case "bottom":
+        top = rect.bottom;
+        left = rect.left + rect.width / 2;
+        transform = "translate(-50%, 0) translateY(8px)";
+        break;
+      case "left":
+        top = rect.top + rect.height / 2;
+        left = rect.left;
+        transform = "translate(-100%, -50%) translateX(-8px)";
+        break;
+      case "right":
+        top = rect.top + rect.height / 2;
+        left = rect.right;
+        transform = "translate(0, -50%) translateX(8px)";
+        break;
+    }
+
+    setCoords({ top, left, transform });
     const id = setTimeout(() => setIsVisible(true), delay);
     setTimeoutId(id);
   };
@@ -29,13 +59,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   const handleMouseLeave = () => {
     if (timeoutId) clearTimeout(timeoutId);
     setIsVisible(false);
-  };
-
-  const positionClasses = {
-    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
-    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
-    left: "right-full top-1/2 -translate-y-1/2 mr-2",
-    right: "left-full top-1/2 -translate-y-1/2 ml-2",
+    setCoords(null);
   };
 
   const arrowClasses = {
@@ -52,11 +76,16 @@ const Tooltip: React.FC<TooltipProps> = ({
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      {isVisible && (
+      {isVisible && coords && (
         <div
+          style={{
+            position: "fixed",
+            top: coords.top,
+            left: coords.left,
+            transform: coords.transform,
+          }}
           className={cn(
-            "absolute z-100 px-3 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-md shadow-xl whitespace-nowrap animate-in fade-in zoom-in duration-200",
-            positionClasses[position],
+            "z-[9999] px-3 py-1.5 text-xs font-semibold text-foreground bg-card border border-border rounded-md shadow-xl whitespace-nowrap animate-in fade-in zoom-in duration-200",
           )}
         >
           {content}
