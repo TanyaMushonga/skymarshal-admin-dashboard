@@ -11,6 +11,7 @@ export interface StreamFrame {
 
 export const useVideoStream = (streamId: string | null) => {
   const [frame, setFrame] = useState<string | null>(null);
+  const [source, setSource] = useState<'LIVE' | 'SIMULATED' | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -100,6 +101,9 @@ export const useVideoStream = (streamId: string | null) => {
             setError(null);
           } else if (data.type === "live_frame") {
             setFrame(data.frame_data);
+            if (data.source) {
+              setSource(data.source);
+            }
             if (!isConnected) setIsConnected(true);
           } else if (data.error) {
             console.error("[WebSocket] Server error message:", data.error);
@@ -141,5 +145,5 @@ export const useVideoStream = (streamId: string | null) => {
     };
   }, [connect]);
 
-  return { frame, isConnected, error, reconnect: connect };
+  return { frame, source, isConnected, error, reconnect: connect };
 };
