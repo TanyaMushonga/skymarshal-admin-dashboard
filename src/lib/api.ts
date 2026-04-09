@@ -3,6 +3,12 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from "axios";
+
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    silent?: boolean;
+  }
+}
 import { getSession } from "next-auth/react";
 import { toast } from "sonner";
 import { redirect } from "next/navigation";
